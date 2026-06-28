@@ -32,7 +32,7 @@ def parse_file(
     from .parser import Parser
     logger.info(f"Parsing {rgd_file}...")
 
-    Parser.parse(rgd_file)
+    Parser().parse(rgd_file)
 
     logger.info("Done!")
 
