@@ -77,7 +77,7 @@ class Parser:
 
     def _parse_key(self, substr: str):
         # Check if quoted key
-        if substr.startswith('"') or substr.startswith("'"):
+        if substr[0] == '"' or substr[0] == "'":
             quote_regex = r'"(?:\\.|[^"\\])*"' if substr[0] == '"' else r"'(?:\\.|[^'\\])*'"
             # Find matching quote
             if (m := re.search(quote_regex, substr)) is not None:
@@ -90,6 +90,7 @@ class Parser:
 
         unquote_regex = r'[A-Za-z0-9_][A-Za-z0-9_.-]*'
         if (m := re.search(unquote_regex, substr)) is not None:
+            print(m)
             span = m.span()
             key = substr[span[0]:span[1]]
             line = substr[span[1]:]
