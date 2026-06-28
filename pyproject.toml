@@ -1,0 +1,25 @@
+[project]
+name = "py-rgd"
+version = "0.1.0"
+description = "RGD Parser for Python"
+readme = "README.md"
+authors = [
+    { name = "Collin Phillips", email = "collinp1024@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "rich>=15.0.0",
+    "typer>=0.26.8",
+]
+
+[project.optional-dependencies]
+networkx = [
+    "networkx>=3.6.1"
+]
+
+[project.scripts]
+rgd = "py_rgd:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
