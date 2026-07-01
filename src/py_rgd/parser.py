@@ -83,12 +83,19 @@ class Parser:
             if (m := re.search(quote_regex, substr)) is not None:
                 span = m.span()
                 key = substr[span[0]+1:span[1]-1]
+                if len(key) < 1:
+                    raise RGDKeyValueError
                 line = substr[span[1]:]
                 return key, line
             else:
                 raise RGDKeyValueError
 
-        unquote_regex = r'[A-Za-z0-9_][A-Za-z0-9_.-]*'
+        # TODO: Is there a better way to do this?
+        invalid_chars = ['=', '<', '>']
+        if any([c in substr for c in invalid_chars]):
+            raise RGDKeyValueError
+
+        unquote_regex = r'^[A-Za-z0-9_][A-Za-z0-9_.-]*'
         if (m := re.search(unquote_regex, substr)) is not None:
             print(m)
             span = m.span()
@@ -112,8 +119,10 @@ class Parser:
         value, line = self._parse_value(line)
 
     def _parse_node(self, line: str):
-        key, line = self._parse_key(line.strip())
-        print(key, line)
+        parts = line.strip().split()
+        for part in parts:
+            key, _= self._parse_key(line.strip())
+            print(key, line)
 
     def _parse_edge(self, line: str):
         ...

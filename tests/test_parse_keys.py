@@ -1,5 +1,4 @@
 import pytest
-import pytest
 
 from py_rgd.parser import Parser, RGDKeyValueError
 
@@ -48,8 +47,9 @@ def test_parse_bad_keys():
     no spaces
     {}
     """
+    print()
     for line in test_str.strip().splitlines():
-        print(line)
+        print(line.strip())
         with pytest.raises(RGDKeyValueError):
             key, line = p._parse_key(line.strip())
 
