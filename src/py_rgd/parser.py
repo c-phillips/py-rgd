@@ -3,6 +3,8 @@ from enum import Enum
 from pathlib import Path
 import re
 
+from lark import Lark
+
 
 class RGDSectionError(Exception):
     ...
@@ -31,6 +33,43 @@ class Parser:
         State.EDGE_DOC_HEADER  : [State.EDGE_DOC_BODY],
         State.EDGE_DOC_BODY    : [State.GRAPH_DOC_HEADER],
     }
+
+    @staticmethod
+    def lark(s: str):
+        grammar = r"""
+        rgd:  NLP* (node_doc | graph_doc+)
+
+        graph_doc:  (graph_header NLP)? graph_prop* node_doc
+        node_doc:   (node_header NLP)?  node_expr*  edge_doc*
+        edge_doc:   (edge_header NLP)?  edge_expr* 
+
+        graph_header: "# graph"
+        node_header:  "# nodes"
+        edge_header:  "#" "edges"?
+
+        graph_prop: NUMBER NLP
+        node_expr:  NUMBER NLP
+        edge_expr:  NUMBER NLP
+
+        NLP: NEWLINE+
+        COMMENT: /\/\/[^\n]*\n?/
+
+        %import common.WS
+        %import common.WS_INLINE
+        %import common.NEWLINE
+        %import common.SIGNED_FLOAT
+        %import common.SIGNED_INT
+        %import common.HEXDIGIT
+        %import common.NUMBER
+        %import common.SIGNED_NUMBER
+
+
+        %ignore COMMENT
+        %ignore WS_INLINE
+        """
+
+        lark = Lark(grammar, start='rgd')
+        return lark.parse(s)
 
     def parse(self, filepath: Path):
         logger = logging.getLogger("rgd.Parser")
