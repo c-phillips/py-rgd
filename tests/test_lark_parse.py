@@ -11,6 +11,7 @@ def test_lark():
 // Comment test
 A
 B
+"crazy$key"
 #
 A -> B
     """

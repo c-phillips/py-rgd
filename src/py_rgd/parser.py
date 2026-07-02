@@ -47,9 +47,20 @@ class Parser:
         node_header:  "# nodes"
         edge_header:  "#" "edges"?
 
-        graph_prop: NUMBER NLP
-        node_expr:  NUMBER NLP
-        edge_expr:  NUMBER NLP
+        graph_prop: key NLP
+        node_expr:  key NLP
+        edge_expr:  key edge_dir key NLP
+
+        edge_dir: E_LR | E_RL | E_BI | E_UN
+        E_LR: "->"
+        E_RL: "<-"
+        E_BI: "<>"
+        E_UN: "--"
+
+        key: ESCAPED_STRING | unquoted_key
+        unquoted_key: KEY_START KEY_FINAL*
+        KEY_START: LETTER | DIGIT
+        KEY_FINAL: LETTER | DIGIT | "." | "_"
 
         NLP: NEWLINE+
         COMMENT: /\/\/[^\n]*\n?/
@@ -62,6 +73,9 @@ class Parser:
         %import common.HEXDIGIT
         %import common.NUMBER
         %import common.SIGNED_NUMBER
+        %import common.ESCAPED_STRING
+        %import common.LETTER
+        %import common.DIGIT
 
 
         %ignore COMMENT
