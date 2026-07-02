@@ -7,11 +7,14 @@ def test_lark():
 
     s = """
 # graph
+test = "prop"
+another = ["list", "of", 12]
 # nodes
 // Comment test
 A
 B
 "crazy$key"
+"😀"
 #
 A -> B
     """

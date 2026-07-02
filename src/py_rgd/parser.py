@@ -47,7 +47,7 @@ class Parser:
         node_header:  "# nodes"
         edge_header:  "#" "edges"?
 
-        graph_prop: key NLP
+        graph_prop: keyval NLP
         node_expr:  key NLP
         edge_expr:  key edge_dir key NLP
 
@@ -56,6 +56,15 @@ class Parser:
         E_RL: "<-"
         E_BI: "<>"
         E_UN: "--"
+
+        keyval: key /\=/ val
+        val: array
+            | ESCAPED_STRING    -> string
+            | SIGNED_NUMBER     -> number 
+            | BOOL              -> bool
+
+        BOOL: "true" | "false"
+        array: "[" [val ("," val)*] "]"
 
         key: ESCAPED_STRING | unquoted_key
         unquoted_key: KEY_START KEY_FINAL*
@@ -73,6 +82,7 @@ class Parser:
         %import common.HEXDIGIT
         %import common.NUMBER
         %import common.SIGNED_NUMBER
+        %import common._STRING_ESC_INNER -> UNQUOTE_STRING
         %import common.ESCAPED_STRING
         %import common.LETTER
         %import common.DIGIT
