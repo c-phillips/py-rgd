@@ -48,16 +48,25 @@ class Parser:
         edge_header:  "#" "edges"?
 
         graph_prop: keyval NLP
-        node_expr:  key NLP
-        edge_expr:  key edge_dir key NLP
+        node_expr:  key (description | legacy_description)? NLP
+        edge_expr:  key edge_dir? key (description | legacy_description)? NLP
 
-        edge_dir: E_LR | E_RL | E_BI | E_UN
+        description: ":" (val* | keyval_list)
+        legacy_description: SIGNED_NUMBER   -> number
+                          | ESCAPED_STRING  -> string
+                          | /\S+/           -> string
+
+        edge_dir: E_LR  -> lr
+                | E_RL  -> rl 
+                | E_BI  -> bi 
+                | E_UN  -> un 
         E_LR: "->"
         E_RL: "<-"
         E_BI: "<>"
         E_UN: "--"
 
-        keyval: key /\=/ val
+        keyval_list: keyval ("," keyval)*
+        keyval: key "=" val
         val: array
             | ESCAPED_STRING    -> string
             | SIGNED_NUMBER     -> number 
@@ -66,10 +75,8 @@ class Parser:
         BOOL: "true" | "false"
         array: "[" [val ("," val)*] "]"
 
-        key: ESCAPED_STRING | unquoted_key
-        unquoted_key: KEY_START KEY_FINAL*
-        KEY_START: LETTER | DIGIT
-        KEY_FINAL: LETTER | DIGIT | "." | "_"
+        key: ESCAPED_STRING | UNQUOTED_KEY
+        UNQUOTED_KEY: (LETTER | DIGIT) (WORD | DIGIT | "." | "_")*
 
         NLP: NEWLINE+
         COMMENT: /\/\/[^\n]*\n?/
@@ -85,6 +92,7 @@ class Parser:
         %import common._STRING_ESC_INNER -> UNQUOTE_STRING
         %import common.ESCAPED_STRING
         %import common.LETTER
+        %import common.WORD
         %import common.DIGIT
 
 
