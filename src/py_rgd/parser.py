@@ -87,7 +87,7 @@ def _lark_parse(input: str, callbacks: dict | None = None):
 
 
 
-def rgd_loads(input: str):
+def rgd_loads(input: str, validate: bool = True):
     tree = _lark_parse(input)
     xform = (
         KeyTransformer()
@@ -115,6 +115,10 @@ def rgd_loads(input: str):
                 G.edges = block
     if G is not None:
         graphs.append(G)
+
+    if validate:
+        for graph in graphs:
+            graph.validate()
 
     return graphs
 

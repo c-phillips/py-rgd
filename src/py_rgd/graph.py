@@ -1,6 +1,7 @@
 from typing import Any
 from dataclasses import dataclass
 from enum import Enum
+from itertools import chain
 
 from lark import Transformer
 
@@ -112,12 +113,13 @@ class NodeTransformer(Transformer):
         return args[0]
 
     def node_expr(self, args):
-        if len(args) > 1:
-            return Node(args[0], args[1])
-        return Node(args[0])
+        nodes = [args[0]] if not isinstance(args[0], set) else list(args[0])
+        desc = args[1] if len(args) > 1 else None
+        return [Node(n, desc) for n in nodes]
 
     def node_doc(self, args):
-        return [n for n in args if isinstance(n, Node)]
+        a = [a for a in args if isinstance(a, list)]
+        return list(chain.from_iterable(a))
 
 class EdgeTransformer(Transformer):
     def E_LR(self, _args):
@@ -184,6 +186,28 @@ class Graph:
     nodes: list[Node]
     edges: list[Edge | Hyperedge]
     properties: Attributes | None = None
+
+    def validate(self):
+        # Validate graph
+        node_names = {n.key for n in self.nodes}
+        edge_nodes = set()
+        for edge in self.edges:
+            if isinstance(edge, Edge):
+                edge_nodes.add(edge.u)
+                edge_nodes.add(edge.v)
+            else:
+                if isinstance(edge.e, set):
+                    edge_nodes.update(edge.e)
+                else:
+                    edge_nodes.add(edge.e)
+                if isinstance(edge.f, set):
+                    edge_nodes.update(edge.f)
+                else:
+                    edge_nodes.add(edge.f)
+        print(node_names)
+        print(edge_nodes)
+        diff = edge_nodes.difference(node_names)
+        assert len(diff) == 0, f"Edges contain undefined nodes! {diff}"
 
     def __repr__(self) -> str:
         s = "Graph:\n"
