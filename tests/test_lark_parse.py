@@ -20,9 +20,6 @@ def test_lark():
     E <> Z
     {B, C} -> {A}
     A B buddy boy 12
-
-    # graph
-    # nodes
     """
     # print(s)
     # result = _lark_parse(s)
@@ -30,5 +27,4 @@ def test_lark():
 
     G = Graph.loads(s)
     rich.print(G)
-
 

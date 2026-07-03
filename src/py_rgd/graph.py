@@ -11,7 +11,10 @@ from .parser import _lark_parse
 @dataclass
 class Node:
     key: Any
-    props: Attributes
+    props: Attributes | None = None
+
+    def __repr__(self) -> str:
+        return f"(Node) {self.key}: {self.props}"
 
 
 @dataclass
@@ -21,6 +24,19 @@ class Edge:
         DIRECTED = 1
         BIDIRECTIONAL = 2
 
+        def __str__(self) -> str:
+            return self.__repr__()
+
+        def __repr__(self) -> str:
+            if self.name == "UNDIRECTED":
+                return "--"
+            elif self.name == "DIRECTED":
+                return "->"
+            elif self.name == "BIDIRECTIONAL":
+                return "<>"
+            else:
+                return "??"
+
     class DirectionOrder(Enum):
         LR = 0
         RL = 1
@@ -28,8 +44,11 @@ class Edge:
 
     u: Node
     v: Node
-    direction: Direction
-    props: Attributes
+    direction: Direction = Direction.UNDIRECTED
+    props: Attributes | None = None
+
+    def __repr__(self) -> str:
+        return f"(Edge) {self.u} {self.direction} {self.v}: {self.props}"
 
 
 @dataclass
@@ -70,7 +89,7 @@ class ValueTransformer(Transformer):
         # TODO: use int when appropriate
         return float(args)
 
-    def NLP(self, args):
+    def NLP(self, _args):
         return None
 
     def keyval(self, args):
@@ -92,54 +111,94 @@ class NodeTransformer(Transformer):
 
     def node_expr(self, args):
         if len(args) > 1:
-            return (args[0], args[1])
-        return args[0]
+            return Node(args[0], args[1])
+        return Node(args[0])
+
+    def node_doc(self, args):
+        return [n for n in args if isinstance(n, Node)]
 
 class EdgeTransformer(Transformer):
-    def E_LR(self, args):
+    def E_LR(self, _args):
         return Edge.Direction.DIRECTED
     def lr(self, args):
         return (args[0], Edge.DirectionOrder.LR)
 
-    def E_RL(self, args):
+    def E_RL(self, _args):
         return Edge.Direction.DIRECTED
     def rl(self, args):
         return (args[0], Edge.DirectionOrder.RL)
 
-    def E_BI(self, args):
+    def E_BI(self, _args):
         return Edge.Direction.BIDIRECTIONAL
     def bi(self, args):
         return (args[0], Edge.DirectionOrder.BI)
 
-    def E_UN(self, args):
+    def E_UN(self, _args):
         return Edge.Direction.UNDIRECTED
     def un(self, args):
         return (args[0], None)
 
     def edge_expr(self, args):
+        # Normalize edge direction order
         if args[1][0] == Edge.Direction.DIRECTED:
-            # Normalize edge direction order
             if args[1][1] == Edge.DirectionOrder.RL:
                 args[1] = (Edge.Direction.DIRECTED, Edge.DirectionOrder.LR)
                 args[2], args[0] = args[0], args[2]
-        args[1] = args[1][0]
-        return tuple(args[:-1])
+
+        return Edge(args[0], args[2], args[1][0], args[3] if len(args) > 3 else None)
 
     def legacy_edge_expr(self, args):
-        return tuple([args[0], (Edge.Direction.UNDIRECTED, None), args[1]] + args[2:-1])
+        args = args[:-1]
+        if len(args) > 2:
+            if len(args) == 3:
+                details = args[2]
+            else:
+                details = args[2:-1]
+        else:
+            details = None
+        return Edge(args[0], args[1], Edge.Direction.UNDIRECTED, details)
+
+    def edge_doc(self, args):
+        return [e for e in args if isinstance(e, Edge)]
+
+class GraphTransformer(Transformer):
+    def graph_prop(self, args):
+        return args[0]
+
+    def graph_doc(self, args):
+        return {a[0]:a[1] for a in args if isinstance(a, tuple)}
+
+    def block(self, args):
+        return args[0]
 
 @dataclass
 class Graph:
     nodes: list[Node]
     edges: list[Edge | Hyperedge]
+    properties: Attributes | None = None
 
     @classmethod
-    def loads(cls, input: str) -> 'Graph':
+    def loads(cls, input: str):
         tree = _lark_parse(input)
-        tree = KeyTransformer().transform(tree)
-        tree = ValueTransformer().transform(tree)
-        tree = NodeTransformer().transform(tree)
-        tree = EdgeTransformer().transform(tree)
-        return tree
+        xform = (
+            KeyTransformer()
+            * ValueTransformer()
+            * NodeTransformer()
+            * EdgeTransformer()
+            * GraphTransformer()
+        )
+        tree = xform.transform(tree)
+        blocks = [c for c in tree.children if c is not None]
 
+        graph_groups = []
+        group = []
+        for block in blocks:
+            if isinstance(block, dict):
+                if group: graph_groups.append(group)
+                group = [block]
+            else:
+                group.append(block)
+        if group:
+            graph_groups.append(group)
+        return graph_groups
 
