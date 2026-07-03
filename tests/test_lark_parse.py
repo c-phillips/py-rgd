@@ -8,6 +8,8 @@ def test_lark():
 
     s = """
     # graph
+    property = "what in the world"
+    metric = 1e-10
     # nodes
     {A, B, C, "😀"} hey there
     42: label = "Numeric node key"
