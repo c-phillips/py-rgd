@@ -3,18 +3,21 @@ import rich
 
 
 def test_lark():
-    from py_rgd.parser import Parser
+    from py_rgd.parser import _lark_parse
 
     s = """
     # graph
-    hey = "there"
     # nodes
-    {A, B, C, "😀"} 12
+    {A, B, C, "😀"} hey there
     #
-    A -> B
+    A -> B: 12
     {B, C} -> {A}
+    A B buddy boy 12
+
+    # graph
+    # nodes
     """
     print(s)
-    result = Parser.lark(s)
+    result = _lark_parse(s)
     rich.print(result)
 
