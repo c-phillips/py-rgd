@@ -204,8 +204,6 @@ class Graph:
                     edge_nodes.update(edge.f)
                 else:
                     edge_nodes.add(edge.f)
-        print(node_names)
-        print(edge_nodes)
         diff = edge_nodes.difference(node_names)
         assert len(diff) == 0, f"Edges contain undefined nodes! {diff}"
 
