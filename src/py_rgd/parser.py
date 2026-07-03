@@ -39,7 +39,7 @@ class Parser:
         grammar = r"""
         rgd:  NLP* (node_doc | graph_doc+)
 
-        graph_doc:  (graph_header NLP)? graph_prop* node_doc
+        graph_doc:  (graph_header NLP)  graph_prop* node_doc
         node_doc:   (node_header NLP)?  node_expr*  edge_doc*
         edge_doc:   (edge_header NLP)?  edge_expr* 
 
@@ -48,8 +48,8 @@ class Parser:
         edge_header:  "#" "edges"?
 
         graph_prop: keyval NLP
-        node_expr:  key (description | legacy_description)? NLP
-        edge_expr:  key edge_dir? key (description | legacy_description)? NLP
+        node_expr:  node (description | legacy_description)? NLP
+        edge_expr:  node edge_dir? node (description | legacy_description)? NLP
 
         description: ":" (val* | keyval_list)
         legacy_description: SIGNED_NUMBER   -> number
@@ -65,6 +65,8 @@ class Parser:
         E_BI: "<>"
         E_UN: "--"
 
+        node: key | key_set
+        key_set: "{" key ("," key)* "}"
         keyval_list: keyval ("," keyval)*
         keyval: key "=" val
         val: array
