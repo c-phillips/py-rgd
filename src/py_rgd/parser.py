@@ -9,7 +9,7 @@ block: graph_doc | explicit_node_doc | edge_doc | implicit_node_doc
 graph_doc:         graph_header NLP graph_prop*
 explicit_node_doc: node_header NLP node_expr*   -> node_doc
 implicit_node_doc: node_expr+                   -> node_doc
-edge_doc:          edge_header NLP edge_expr*
+edge_doc:          edge_header NLP (edge_expr | legacy_edge_expr)*
 
 graph_header: "# graph"
 node_header:  "# nodes"
@@ -18,7 +18,8 @@ edge_header:  "#" "edges"?
 graph_prop: keyval NLP
 
 node_expr: node (description | legacy_description)? NLP
-edge_expr: node edge_dir? node (description | legacy_description)? NLP
+edge_expr: node edge_dir node (description | legacy_description)? NLP
+legacy_edge_expr: node node (description | legacy_description)? NLP
 
 description: ":" (val* | keyval_list)
 legacy_description: legacy_value+
@@ -47,8 +48,8 @@ val: array
 BOOL: "true" | "false"
 array: "[" [val ("," val)*] "]"
 
-key: ESCAPED_STRING | UNQUOTED_KEY
-UNQUOTED_KEY: (LETTER | DIGIT) (WORD | DIGIT | "." | "_")*
+key: ESCAPED_STRING | UNQUOTED_KEY | DIGIT+
+UNQUOTED_KEY: (LETTER | DIGIT) (LETTER | DIGIT | "." | "_")*
 
 NLP: NEWLINE+
 COMMENT: /\/\/[^\n]*\n?/
@@ -71,7 +72,8 @@ COMMENT: /\/\/[^\n]*\n?/
 %ignore WS_INLINE
 """
 
-def _lark_parse(input: str):
-    lark = Lark(rgd_grammar, start='rgd', parser='lalr')
+def _lark_parse(input: str, callbacks: dict | None = None):
+    lark = Lark(rgd_grammar, start='rgd', parser='lalr', lexer_callbacks=callbacks)
     return lark.parse(input)
+
 
