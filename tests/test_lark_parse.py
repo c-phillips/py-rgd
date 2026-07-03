@@ -3,13 +3,10 @@ import rich
 
 
 def test_lark():
-    from py_rgd.graph import Graph
-    from py_rgd.parser import _lark_parse
+    from py_rgd import rgd_loads
 
     s = """
     # graph
-    property = "what in the world"
-    metric = 1e-10
     # nodes
     {A, B, C, "😀"} hey there
     42: label = "Numeric node key"
@@ -20,11 +17,14 @@ def test_lark():
     E <> Z
     {B, C} -> {A}
     A B buddy boy 12
-    """
-    # print(s)
-    # result = _lark_parse(s)
-    # rich.print(result)
 
-    G = Graph.loads(s)
-    rich.print(G)
+    # graph
+    edge_type = "none"
+    # nodes
+    A
+    B
+    """
+
+    graphs = rgd_loads(s)
+    rich.print(graphs)
 

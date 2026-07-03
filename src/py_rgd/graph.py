@@ -2,10 +2,9 @@ from typing import Any
 from dataclasses import dataclass
 from enum import Enum
 
-from lark import Transformer, Visitor
+from lark import Transformer
 
 from .attributes import Attributes
-from .parser import _lark_parse
 
 
 @dataclass
@@ -54,9 +53,12 @@ class Edge:
 @dataclass
 class Hyperedge:
     e: set[Node]
-    props: Attributes
     f: set[Node] | Node | None = None
     direction: Edge.Direction = Edge.Direction.UNDIRECTED
+    props: Attributes | None = None
+
+    def __repr__(self) -> str:
+        return f"(Hyperdge) {self.e} {self.direction} {self.f}: {self.props}"
 
 
 class KeyTransformer(Transformer):
@@ -138,6 +140,12 @@ class EdgeTransformer(Transformer):
     def un(self, args):
         return (args[0], None)
 
+    @staticmethod
+    def __build_edge(u, v, direction = Edge.Direction.UNDIRECTED, details = None):
+        if isinstance(u, set):
+            return Hyperedge(u, v, direction, details)
+        return Edge(u, v, direction, details)
+
     def edge_expr(self, args):
         # Normalize edge direction order
         if args[1][0] == Edge.Direction.DIRECTED:
@@ -145,7 +153,7 @@ class EdgeTransformer(Transformer):
                 args[1] = (Edge.Direction.DIRECTED, Edge.DirectionOrder.LR)
                 args[2], args[0] = args[0], args[2]
 
-        return Edge(args[0], args[2], args[1][0], args[3] if len(args) > 3 else None)
+        return self.__build_edge(args[0], args[2], args[1][0], args[3] if len(args) > 3 else None)
 
     def legacy_edge_expr(self, args):
         args = args[:-1]
@@ -156,10 +164,10 @@ class EdgeTransformer(Transformer):
                 details = args[2:-1]
         else:
             details = None
-        return Edge(args[0], args[1], Edge.Direction.UNDIRECTED, details)
+        return self.__build_edge(args[0], args[1], Edge.Direction.UNDIRECTED, details)
 
     def edge_doc(self, args):
-        return [e for e in args if isinstance(e, Edge)]
+        return [e for e in args if isinstance(e, Edge) or isinstance(e, Hyperedge)]
 
 class GraphTransformer(Transformer):
     def graph_prop(self, args):
@@ -177,28 +185,18 @@ class Graph:
     edges: list[Edge | Hyperedge]
     properties: Attributes | None = None
 
-    @classmethod
-    def loads(cls, input: str):
-        tree = _lark_parse(input)
-        xform = (
-            KeyTransformer()
-            * ValueTransformer()
-            * NodeTransformer()
-            * EdgeTransformer()
-            * GraphTransformer()
-        )
-        tree = xform.transform(tree)
-        blocks = [c for c in tree.children if c is not None]
-
-        graph_groups = []
-        group = []
-        for block in blocks:
-            if isinstance(block, dict):
-                if group: graph_groups.append(group)
-                group = [block]
-            else:
-                group.append(block)
-        if group:
-            graph_groups.append(group)
-        return graph_groups
+    def __repr__(self) -> str:
+        s = "Graph:\n"
+        if self.properties is not None:
+            s += "\tProperties:\n"
+            for k,v in self.properties.items():
+                s += f"\t\t{k}: {v}\n"
+        s += "\tNodes:\n"
+        for node in self.nodes:
+            s += f"\t\t{node}\n"
+        if self.edges:
+            s += "\tEdges:\n"
+            for edge in self.edges:
+                s += f"\t\t{edge}\n"
+        return s
 

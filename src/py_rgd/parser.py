@@ -1,4 +1,13 @@
 from lark import Lark
+from .graph import (
+    KeyTransformer,
+    ValueTransformer,
+    NodeTransformer,
+    EdgeTransformer,
+    GraphTransformer,
+    Node,
+    Graph,
+)
 
 
 rgd_grammar = r"""
@@ -76,4 +85,36 @@ def _lark_parse(input: str, callbacks: dict | None = None):
     lark = Lark(rgd_grammar, start='rgd', parser='lalr', lexer_callbacks=callbacks)
     return lark.parse(input)
 
+
+
+def rgd_loads(input: str):
+    tree = _lark_parse(input)
+    xform = (
+        KeyTransformer()
+        * ValueTransformer()
+        * NodeTransformer()
+        * EdgeTransformer()
+        * GraphTransformer()
+    )
+    tree = xform.transform(tree)
+    blocks = [c for c in tree.children if c is not None]
+
+    graphs = []
+    G = None
+    for block in blocks:
+        if isinstance(block, dict):
+            if G is not None:
+                graphs.append(G)
+            G = Graph([], [], properties=block)
+        else:
+            if G is None:
+                G = Graph([], [])
+            if isinstance(block[0], Node):
+                G.nodes = block
+            else:
+                G.edges = block
+    if G is not None:
+        graphs.append(G)
+
+    return graphs
 

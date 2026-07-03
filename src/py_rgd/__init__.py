@@ -7,6 +7,9 @@ from rich.logging import RichHandler
 import typer
 
 
+from .parser import rgd_loads
+
+
 logging.basicConfig(format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
 logging.getLogger("rgd").setLevel(logging.WARNING)
 
@@ -29,10 +32,9 @@ def parse_file(
     if not rgd_file.suffix != "rgd":
         logger.warning(f"File extension {rgd_file.suffix} != 'rgd'")
 
-    from .parser import Parser
     logger.info(f"Parsing {rgd_file}...")
 
-    Parser().parse(rgd_file)
+    rgd_load(f)
 
     logger.info("Done!")
 
