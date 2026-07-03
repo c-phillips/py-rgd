@@ -99,32 +99,34 @@ class EdgeTransformer(Transformer):
     def E_LR(self, args):
         return Edge.Direction.DIRECTED
     def lr(self, args):
-        return (Edge.DirectionOrder.LR, args[0])
+        return (args[0], Edge.DirectionOrder.LR)
 
     def E_RL(self, args):
         return Edge.Direction.DIRECTED
     def rl(self, args):
-        return (Edge.DirectionOrder.RL, args[0])
+        return (args[0], Edge.DirectionOrder.RL)
 
     def E_BI(self, args):
         return Edge.Direction.BIDIRECTIONAL
     def bi(self, args):
-        return (Edge.DirectionOrder.BI, args[0])
+        return (args[0], Edge.DirectionOrder.BI)
 
     def E_UN(self, args):
         return Edge.Direction.UNDIRECTED
     def un(self, args):
-        return (None, args[0])
+        return (args[0], None)
 
     def edge_expr(self, args):
-        if args[1][1] == Edge.Direction.DIRECTED:
-            if args[1][0] == Edge.DirectionOrder.RL:
-                args[1] = (Edge.DirectionOrder.LR, Edge.Direction.DIRECTED)
+        if args[1][0] == Edge.Direction.DIRECTED:
+            # Normalize edge direction order
+            if args[1][1] == Edge.DirectionOrder.RL:
+                args[1] = (Edge.Direction.DIRECTED, Edge.DirectionOrder.LR)
                 args[2], args[0] = args[0], args[2]
+        args[1] = args[1][0]
         return tuple(args[:-1])
 
     def legacy_edge_expr(self, args):
-        return tuple([args[0], Edge.Direction.UNDIRECTED, args[1]] + args[2:-1])
+        return tuple([args[0], (Edge.Direction.UNDIRECTED, None), args[1]] + args[2:-1])
 
 @dataclass
 class Graph:
