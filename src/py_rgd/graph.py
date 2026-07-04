@@ -88,12 +88,18 @@ class ValueTransformer(Transformer):
     def number(self, args):
         return float(args[0])
 
+    def array(self, args):
+        return args
+
     def SIGNED_NUMBER(self, args):
         # TODO: use int when appropriate
         return float(args)
 
     def NLP(self, _args):
         return None
+
+    def val(self, args):
+        return args[0]
 
     def keyval(self, args):
         return (args[0],args[1])
