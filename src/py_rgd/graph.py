@@ -1,9 +1,9 @@
 from typing import Any
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 from itertools import chain
 
-from lark import Transformer
+from lark import Token, Transformer
 
 from .attributes import Attributes
 
@@ -19,23 +19,10 @@ class Node:
 
 @dataclass
 class Edge:
-    class Direction(Enum):
-        UNDIRECTED = 0
-        DIRECTED = 1
-        BIDIRECTIONAL = 2
-
-        def __str__(self) -> str:
-            return self.__repr__()
-
-        def __repr__(self) -> str:
-            if self.name == "UNDIRECTED":
-                return "--"
-            elif self.name == "DIRECTED":
-                return "->"
-            elif self.name == "BIDIRECTIONAL":
-                return "<>"
-            else:
-                return "??"
+    class Direction(StrEnum):
+        UNDIRECTED = "--"
+        DIRECTED = "->"
+        BIDIRECTIONAL = "<>"
 
     class DirectionOrder(Enum):
         LR = 0
@@ -62,91 +49,46 @@ class Hyperedge:
         return f"(Hyperdge) {self.e} {self.direction} {self.f}: {self.props}"
 
 
-class KeyTransformer(Transformer):
-    def DIGIT(self, args):
-        print(f"DIGIT: {args}")
-        return int(args)
-
-    def ESCAPED_STRING(self, args):
-        return str(args)[1:-1]
-
-    def UNQUOTED_KEY(self, args):
-        # FIXME: DIGIT keys are returned as strings...
-        return str(args)
-
-    def key(self, args):
-        return args[0]
-
-    def key_set(self, args):
-        # TODO: Throw exception for repeated set values
-        return set(args)
-
-class ValueTransformer(Transformer):
-    def string(self, args):
-        return str(args[0])
-
-    def number(self, args):
-        return float(args[0])
-
-    def array(self, args):
-        return args
-
-    def SIGNED_NUMBER(self, args):
-        # TODO: use int when appropriate
-        return float(args)
-
-    def NLP(self, _args):
-        return None
-
-    def val(self, args):
-        return args[0]
-
-    def keyval(self, args):
-        return (args[0],args[1])
-
-    def keyval_list(self, args):
-        # TODO: Throw exception for repeated keys
-        return {k:v for k,v in args}
-
-    def legacy_description(self, args):
-        return args
-
-    def description(self, args):
-        return args[0]
-
 class NodeTransformer(Transformer):
-    def node(self, args):
-        return args[0]
+    def node_decl(self, items):
+        return [Node(items[0], items[1] if len(items) > 1 else None)]
 
-    def node_expr(self, args):
-        nodes = [args[0]] if not isinstance(args[0], set) else list(args[0])
-        desc = args[1] if len(args) > 1 else None
-        return [Node(n, desc) for n in nodes]
+    def node_set(self, items):
+        return items[0]
 
-    def node_doc(self, args):
-        a = [a for a in args if isinstance(a, list)]
-        return list(chain.from_iterable(a))
+    def node_set_decl(self, items):
+        return [Node(n, items[1]) for n in items[0]]
+
+    def node_line(self, items):
+        return items[0]
+
+    def node_doc(self, items):
+        nodes = list(chain.from_iterable(items))
+
+        # Merge node redefinitions
+        node_map = dict()
+        for node in nodes:
+            if node.key not in node_map:
+                node_map[node.key] = [node]
+            else:
+                node_map[node.key].append(node)
+        for key, nodes in node_map.items():
+            if len(nodes) > 1:
+                props = dict()
+                for node in nodes:
+                    if not isinstance(node.props, dict):
+                        raise ValueError("Nodes cannot have multiple descriptions unless each uses a key-value list")
+                    props |= node.props
+                node_map[key] = Node(key, props)
+            else:
+                node_map[key] = nodes[0]
+        return list(node_map.values())
+
+    def node_doc_body(self, items):
+        return items
+
 
 class EdgeTransformer(Transformer):
-    def E_LR(self, _args):
-        return Edge.Direction.DIRECTED
-    def lr(self, args):
-        return (args[0], Edge.DirectionOrder.LR)
-
-    def E_RL(self, _args):
-        return Edge.Direction.DIRECTED
-    def rl(self, args):
-        return (args[0], Edge.DirectionOrder.RL)
-
-    def E_BI(self, _args):
-        return Edge.Direction.BIDIRECTIONAL
-    def bi(self, args):
-        return (args[0], Edge.DirectionOrder.BI)
-
-    def E_UN(self, _args):
-        return Edge.Direction.UNDIRECTED
-    def un(self, args):
-        return (args[0], None)
 
     @staticmethod
     def __build_edge(u, v, direction = Edge.Direction.UNDIRECTED, details = None):
@@ -154,38 +96,62 @@ class EdgeTransformer(Transformer):
             return Hyperedge(u, v, direction, details)
         return Edge(u, v, direction, details)
 
-    def edge_expr(self, args):
-        # Normalize edge direction order
-        if args[1][0] == Edge.Direction.DIRECTED:
-            if args[1][1] == Edge.DirectionOrder.RL:
-                args[1] = (Edge.Direction.DIRECTED, Edge.DirectionOrder.LR)
-                args[2], args[0] = args[0], args[2]
+    def edge_decl(self, items):
+        u, d, v = items[0], items[1], items[2]
+        props = items[3] if len(items) > 3 else None
+        return self.__build_edge(u, v, d, props)
 
-        return self.__build_edge(args[0], args[2], args[1][0], args[3] if len(args) > 3 else None)
+    def legacy_edge_decl(self, items):
+        return self.__build_edge(items[0], items[1], details=items[2:])
 
-    def legacy_edge_expr(self, args):
-        args = args[:-1]
-        if len(args) > 2:
-            if len(args) == 3:
-                details = args[2]
-            else:
-                details = args[2:-1]
-        else:
-            details = None
-        return self.__build_edge(args[0], args[1], Edge.Direction.UNDIRECTED, details)
+    def edge_line(self, items):
+        return items[0]
 
-    def edge_doc(self, args):
-        return [e for e in args if isinstance(e, Edge) or isinstance(e, Hyperedge)]
+    def edge_doc(self, items):
+        return [e for e in items if isinstance(e, (Edge, Hyperedge))]
+
+
 
 class GraphTransformer(Transformer):
-    def graph_prop(self, args):
-        return args[0]
+    def graph_expression(self, items):
+        return {items[0][0]:items[0][1]}
 
-    def graph_doc(self, args):
-        return {a[0]:a[1] for a in args if isinstance(a, tuple)}
+    def graph_prop_line(self, items):
+        return items[0]
 
-    def block(self, args):
-        return args[0]
+    def headerless_doc(self, items):
+        items = items[0]
+        if len(items) > 1:
+            return (dict(), items[0], items[1])
+        return (dict(), items[0], [])
+
+    def graph_doc(self, items):
+        items = [item for item in items if not (isinstance(item, Token) and item.type == "NLP") ]
+        node_header_index = [(isinstance(t, Token) and t.type == "NODE_HEADER") for t in items].index(True)
+
+        graph_props = dict()
+        for prop in items[1:node_header_index]:
+            graph_props |= prop
+
+        edges = []
+        items = items[node_header_index+1]
+        if len(items) > 1:
+            nodes, edges = items
+        else:
+            nodes = items[0]
+
+        return (graph_props, nodes, edges)
+
+    def graph_docs(self, items):
+        return items
+
+    def rgd(self, items):
+        items = [item for item in items if not (isinstance(item, Token) and item.type == "NLP") ]
+        return items
+
+    def empty_doc(self, _items):
+        return None
+
 
 @dataclass
 class Graph:

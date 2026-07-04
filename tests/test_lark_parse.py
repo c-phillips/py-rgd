@@ -3,21 +3,25 @@ import rich
 
 
 def test_lark():
-    from py_rgd import rgd_loads
+    from py_rgd.parser import rgd_loads
 
     s = """
-    {A, B, C, "😀"} hey there
+    # graph
+    # nodes
+    {A, B, C, "😀"}: value = "hey there"
+    {D, E}: label = "follower"
     42: label = "Numeric node key"
+    C: label = "leader"
+    D: value = 11.111
     #
-    A -> B: 12
-    C <- B: 5
-    D -- "what"
-    E <> Z
-    {B, C} -> {A}
-    A B buddy boy 12
+    A -> B
+    C -> A: label = "custom", another = 12
 
+    # graph
+    # nodes
+    A: 2026-04-07
     """
 
-    graphs = rgd_loads(s)
-    rich.print(graphs)
+    tree = rgd_loads(s)
+    rich.print(tree)
 
