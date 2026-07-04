@@ -29,8 +29,8 @@ class Edge:
         RL = "<-"
         BI = "<>"
 
-    u: Node
-    v: Node
+    u: Any
+    v: Any
     direction: Direction = Direction.UNDIRECTED
     props: Attributes | None = None
 
@@ -40,8 +40,8 @@ class Edge:
 
 @dataclass
 class Hyperedge:
-    e: set[Node]
-    f: set[Node] | Node | None = None
+    e: set[Any]
+    f: set[Any] | Any | None = None
     direction: Edge.Direction = Edge.Direction.UNDIRECTED
     props: Attributes | None = None
 
@@ -92,7 +92,7 @@ class EdgeTransformer(Transformer):
 
     @staticmethod
     def __build_edge(u, v, direction = Edge.Direction.UNDIRECTED, details = None):
-        if isinstance(u, set):
+        if isinstance(u, set) or isinstance(v, set):
             return Hyperedge(u, v, direction, details)
         return Edge(u, v, direction, details)
 
@@ -176,7 +176,9 @@ class Graph:
                     edge_nodes.update(edge.e)
                 else:
                     edge_nodes.add(edge.e)
-                if isinstance(edge.f, set):
+                if edge.f is None:
+                    pass
+                elif isinstance(edge.f, set):
                     edge_nodes.update(edge.f)
                 else:
                     edge_nodes.add(edge.f)

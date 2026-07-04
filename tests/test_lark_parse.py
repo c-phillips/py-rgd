@@ -23,6 +23,6 @@ def test_lark():
     A: 2026-04-07
     """
 
-    tree = rgd_loads(s)
-    rich.print(tree)
+    graphs = rgd_loads(s)
+    
 
