@@ -24,10 +24,10 @@ class Edge:
         DIRECTED = "->"
         BIDIRECTIONAL = "<>"
 
-    class DirectionOrder(Enum):
-        LR = 0
-        RL = 1
-        BI = 2
+    class DirectionOrder(StrEnum):
+        LR = "->"
+        RL = "<-"
+        BI = "<>"
 
     u: Node
     v: Node
@@ -98,6 +98,10 @@ class EdgeTransformer(Transformer):
 
     def edge_decl(self, items):
         u, d, v = items[0], items[1], items[2]
+        # Normalize edge direction
+        if d == Edge.DirectionOrder.RL:
+            u,v = v,u
+            d = Edge.DirectionOrder.LR
         props = items[3] if len(items) > 3 else None
         return self.__build_edge(u, v, d, props)
 
