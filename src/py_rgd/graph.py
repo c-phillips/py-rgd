@@ -57,7 +57,7 @@ class NodeTransformer(Transformer):
         return items[0]
 
     def node_set_decl(self, items):
-        return [Node(n, items[1]) for n in items[0]]
+        return [Node(n, items[1] if len(items) > 1 else None) for n in items[0]]
 
     def node_line(self, items):
         return items[0]
@@ -147,7 +147,7 @@ class GraphTransformer(Transformer):
 
     def rgd(self, items):
         items = [item for item in items if not (isinstance(item, Token) and item.type == "NLP") ]
-        return items
+        return items[0]
 
     def empty_doc(self, _items):
         return None
@@ -181,7 +181,7 @@ class Graph:
 
     def __repr__(self) -> str:
         s = "Graph:\n"
-        if self.properties is not None:
+        if self.properties:
             s += "\tProperties:\n"
             for k,v in self.properties.items():
                 s += f"\t\t{k}: {v}\n"

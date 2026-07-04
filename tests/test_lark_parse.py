@@ -18,6 +18,7 @@ def test_lark():
     C -> A: label = "custom", another = 12
 
     # graph
+    example = 42
     # nodes
     A: 2026-04-07
     """

@@ -147,25 +147,8 @@ def rgd_loads(input: str, validate: bool = True):
         * GraphTransformer()
     )
     tree = xform.transform(tree)
-    return tree
-    blocks = [c for c in tree.children if c is not None]
 
-    graphs = []
-    G = None
-    for block in blocks:
-        if isinstance(block, dict):
-            if G is not None:
-                graphs.append(G)
-            G = Graph([], [], properties=block)
-        else:
-            if G is None:
-                G = Graph([], [])
-            if isinstance(block[0], Node):
-                G.nodes = block
-            else:
-                G.edges = block
-    if G is not None:
-        graphs.append(G)
+    graphs = [Graph(n,e,p) for (p,n,e) in tree]
 
     if validate:
         for graph in graphs:
