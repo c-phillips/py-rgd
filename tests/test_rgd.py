@@ -180,6 +180,51 @@ B A at 1979-05-30T12:05Z
     assert graph.get_edge("B", "A") is not None
 
 
+def test_numeric_node_keys_are_keys_not_numbers() -> None:
+    src = r'''
+# nodes
+42: label = "Numeric node key"
+7
+# edges
+42 -- 7
+'''
+    graph = loads(src)[0]
+
+    assert len(graph.nodes) == 2
+    assert len(graph.edges) == 1
+    assert graph.node_keys == {"42", "7"}
+    assert graph.get_node("42").props["label"] == "Numeric node key"
+    assert graph.get_edge("42", "7") is not None
+
+
+def test_multiple_graphs() -> None:
+    src = r'''
+# graph
+name = "g1"
+# nodes
+A
+
+# graph
+name = "g2"
+# nodes
+B
+C
+# edges
+B -- C
+'''
+
+    graphs = loads(src)
+    assert len(graphs) == 2
+
+    assert graphs[0].props["name"] == "g1"
+    assert graphs[0].node_keys == {"A"}
+    assert graphs[0].edges == []
+
+    assert graphs[1].props["name"] == "g2"
+    assert graphs[1].node_keys == {"B", "C"}
+    assert graphs[1].get_edge("B", "C") is not None
+
+
 @pytest.mark.parametrize(("name", "src"),
 [
 ## VALUES
