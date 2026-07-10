@@ -96,6 +96,39 @@ A
     assert graph.edges == []
 
 
+def test_ordinary_edges_directions_descriptions_and_normalization() -> None:
+    src = r'''
+# nodes
+A
+B
+C
+D
+# edges
+A -> B: weight = 5.0
+C <- B: label = "reverse normalized"
+A -- C
+B <> D: active = true
+'''
+
+    graph = loads(src)[0]
+
+    assert graph.props == {}
+    assert graph.node_keys == {"A", "B", "C", "D"}
+    assert len(graph.edges) == 4
+
+    e1 = graph.get_edge("A", "B", "->")
+    assert e1.props["weight"] == pytest.approx(5.0)
+
+    # C <- B should normalize to B -> C in your EdgeTransformer.
+    e2 = graph.get_edge("B", "C", "->")
+    assert e2.props["label"] == "reverse normalized"
+
+    e3 = graph.get_edge("A", "C")
+
+    e4 = graph.get_edge("B", "D", "<>")
+    assert e4.props["active"] is True
+
+
 @pytest.mark.parametrize(("name", "src"),
 [
 ## VALUES

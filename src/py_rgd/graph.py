@@ -68,24 +68,29 @@ class NodeTransformer(Transformer):
         # Merge node redefinitions
         node_map = dict()
         for node in nodes:
-            if node.key not in node_map:
-                node_map[node.key] = [node]
-            else:
-                node_map[node.key].append(node)
+            node_map.setdefault(node.key, []).append(node)
+
+        results = []
         for key, nodes in node_map.items():
-            if len(nodes) > 1:
-                props = dict()
-                for node in nodes:
-                    if not isinstance(node.props, dict):
-                        raise ValueError("Nodes cannot have multiple descriptions unless each uses a key-value list")
-                    props |= node.props
-                node_map[key] = Node(key, props)
-            else:
-                node_map[key] = nodes[0]
-        return list(node_map.values())
+            if len(nodes) == 1:
+                results.append(nodes[0])
+                continue
+
+            props = dict()
+            for node in nodes:
+                if not isinstance(node.props, dict):
+                    raise ValueError("Nodes cannot have multiple descriptions unless each uses a key-value list")
+                overlap = props.keys() & node.props.keys()
+                if overlap:
+                    raise ValueError(f"Duplicate node properties for {key!r}: {sorted(overlap)!r}")
+                props.update(node.props)
+
+            results.append(Node(key, props))
+
+        return results
 
     def node_doc_body(self, items):
-        return items
+        return items[0], items[1] if len(items) > 1 else []
 
 
 class EdgeTransformer(Transformer):
@@ -124,10 +129,11 @@ class GraphTransformer(Transformer):
         return items[0]
 
     def headerless_doc(self, items):
-        items = items[0]
-        if len(items) > 1:
-            return (dict(), items[0], items[1])
-        return [(dict(), items[0], [])]
+        semantic = [item for item in items if not isinstance(item, Token)]
+        if len(semantic) != 1:
+            raise ValueError("Unexpected headerless document contents: {items!r}")
+
+        return [({}, semantic[0][0], semantic[0][1])]
 
     def graph_doc(self, items):
         items = [item for item in items if not (isinstance(item, Token) and item.type == "NLP") ]
@@ -150,8 +156,10 @@ class GraphTransformer(Transformer):
         return items
 
     def rgd(self, items):
-        items = [item for item in items if not (isinstance(item, Token) and item.type == "NLP") ]
-        return items[0]
+        semantic = [item for item in items if not isinstance(item, Token)]
+        if len(semantic) != 1:
+            raise ValueError("Unexpected RGD contents: {items!r}")
+        return semantic[0]
 
     def empty_doc(self, _items):
         return None
@@ -178,6 +186,11 @@ class Graph:
         for node in self.nodes:
             if key == node.key:
                 return node 
+
+    def get_edge(self, u: Any, v: Any, dir: Edge.Direction = Edge.Direction.UNDIRECTED) -> Edge | None:
+        for edge in self.edges:
+            if edge.u == u and edge.v == v and edge.direction == dir:
+                return edge
 
     def validate(self):
         # Validate graph
