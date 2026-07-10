@@ -38,7 +38,8 @@ def networkx_loads(
             if not isinstance(edge.props, dict):
                 props = {"attributes": props}
             ng.add_edge(edge.u, edge.v, **props)
-            if edge.direction == Edge.Direction.BIDIRECTIONAL:
+            if edge.direction == Edge.Direction.BIDIRECTIONAL  \
+            or edge.direction == Edge.Direction.UNDIRECTED:
                 ng.add_edge(edge.v, edge.u, **props)
 
 

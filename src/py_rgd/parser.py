@@ -149,7 +149,6 @@ def loads(input: str, validate: bool = True):
     tree = xform.transform(tree)
     if tree is None:
         return [Graph([], [], {})]
-    print(tree)
 
     graphs = [Graph(n,e,p) for (p,n,e) in tree]
 
