@@ -4,13 +4,13 @@ except:
     raise ImportError("Could not import networkx")
 
 from py_rgd.graph import Edge, Hyperedge
-from py_rgd.parser import rgd_loads
+from py_rgd.parser import loads
 
-def rgd_networkx_loads(
+def networkx_loads(
     input: str,
     validate: bool = True,
 ) -> nx.Graph | list[nx.Graph]:
-    basic_graphs = rgd_loads(input, validate)
+    basic_graphs = loads(input, validate)
 
     # Networkx has no hypergraph features.
     #   Raise error if any graphs include hyperedges.

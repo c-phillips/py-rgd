@@ -163,6 +163,10 @@ class Graph:
     edges: list[Edge | Hyperedge]
     properties: Attributes | None = None
 
+    @property
+    def node_keys(self) -> set[Any]:
+        return {n.key for n in self.nodes}
+
     def validate(self):
         # Validate graph
         node_names = {n.key for n in self.nodes}

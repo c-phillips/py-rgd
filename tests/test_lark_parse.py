@@ -3,7 +3,7 @@ import rich
 
 
 def test_lark():
-    from py_rgd.parser import rgd_loads
+    from py_rgd import loads
 
     s = """
     # graph
@@ -23,6 +23,6 @@ def test_lark():
     A: 2026-04-07
     """
 
-    graphs = rgd_loads(s)
+    graphs = loads(s)
     
 

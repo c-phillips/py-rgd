@@ -7,7 +7,7 @@ from rich.logging import RichHandler
 import typer
 
 
-from .parser import rgd_loads
+from .parser import loads
 
 
 logging.basicConfig(format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
@@ -34,7 +34,8 @@ def parse_file(
 
     logger.info(f"Parsing {rgd_file}...")
 
-    rgd_load(f)
+    assert False, "TODO: Implement file loading"
+    # load(f)
 
     logger.info("Done!")
 

@@ -8,7 +8,7 @@ except:
 
 
 def test_networkx_parse_digraph():
-    from py_rgd.networkx import rgd_networkx_loads
+    from py_rgd.networkx import networkx_loads
 
     rgd_str = """
     # graph
@@ -23,7 +23,7 @@ def test_networkx_parse_digraph():
     A <> B: [1,2,3]
     """
 
-    graph = rgd_networkx_loads(rgd_str)
+    graph = networkx_loads(rgd_str)
     assert isinstance(graph, nx.DiGraph)
 
     nodes_truth = {'A', 'B', 'C', 'D', 'E'}

@@ -138,7 +138,7 @@ def _lark_parse(input: str):
 
 
 
-def rgd_loads(input: str, validate: bool = True):
+def loads(input: str, validate: bool = True):
     tree = _lark_parse(input)
     xform = (
         RGDValueTransformer()
@@ -147,6 +147,8 @@ def rgd_loads(input: str, validate: bool = True):
         * GraphTransformer()
     )
     tree = xform.transform(tree)
+    if tree is None:
+        return [Graph([], [], {})]
 
     graphs = [Graph(n,e,p) for (p,n,e) in tree]
 
