@@ -1,5 +1,7 @@
-import pytest
 import math
+from textwrap import dedent
+
+import pytest
 
 from py_rgd import loads
 
@@ -27,12 +29,12 @@ def test_empty_documents_parse(src: str) -> None:
 
 
 def test_headerless_nodes_node_sets_and_descriptions() -> None:
-    src = r'''
-A
-B: label = "leader"
-{C, D, "node with spaces"}: group = "followers"
-E: [1, 2, "three"]
-'''
+    src = dedent(r'''
+    A
+    B: label = "leader"
+    {C, D, "node with spaces"}: group = "followers"
+    E: [1, 2, "three"]
+    ''')
 
     graph = loads(src)[0]
 
@@ -49,27 +51,27 @@ E: [1, 2, "three"]
 
 
 def test_explicit_graph_properties_and_value_types() -> None:
-    src = r'''
-# graph
-name = "value coverage"
-dec = -17
-pos = +99
-hex = 0xDEAD_BEEF
-oct = 0o755
-bin = 0b1101
-flt = 6.626e-34
-flt2 = 224_617.445_991_228
-inf = -inf
-truth = true
-literal = 'no escapes here'
-basic = "Jos\xE9"
-arr = [1, 2.0, true, "x", [3, 4]]
-when = 1979-05-27T07:32Z
-local_date = 1979-05-27
-local_time = 07:32
-# nodes
-A
-'''
+    src = dedent(r'''
+    # graph
+    name = "value coverage"
+    dec = -17
+    pos = +99
+    hex = 0xDEAD_BEEF
+    oct = 0o755
+    bin = 0b1101
+    flt = 6.626e-34
+    flt2 = 224_617.445_991_228
+    inf = -inf
+    truth = true
+    literal = 'no escapes here'
+    basic = "Jos\xE9"
+    arr = [1, 2.0, true, "x", [3, 4]]
+    when = 1979-05-27T07:32Z
+    local_date = 1979-05-27
+    local_time = 07:32
+    # nodes
+    A
+    ''')
 
     graph = loads(src)[0]
     props = graph.props
@@ -97,18 +99,18 @@ A
 
 
 def test_ordinary_edges_directions_descriptions_and_normalization() -> None:
-    src = r'''
-# nodes
-A
-B
-C
-D
-# edges
-A -> B: weight = 5.0
-C <- B: label = "reverse normalized"
-A -- C
-B <> D: active = true
-'''
+    src = dedent(r'''
+    # nodes
+    A
+    B
+    C
+    D
+    # edges
+    A -> B: weight = 5.0
+    C <- B: label = "reverse normalized"
+    A -- C
+    B <> D: active = true
+    ''')
 
     graph = loads(src)[0]
 
@@ -131,14 +133,14 @@ B <> D: active = true
 
 
 def test_hyperedges_and_directed_hyperedges() -> None:
-    src = r'''
-# nodes
-{A, B, C, D, E, F, G}
-# edges
-{A, B, C}: hyperproperty = 42.0
-{B, C} -> {E, F, G}: directed-hyperedge = true
-D -- A
-'''
+    src = dedent(r'''
+    # nodes
+    {A, B, C, D, E, F, G}
+    # edges
+    {A, B, C}: hyperproperty = 42.0
+    {B, C} -> {E, F, G}: directed-hyperedge = true
+    D -- A
+    ''')
 
     graph = loads(src)[0]
 
@@ -156,14 +158,14 @@ D -- A
 
 
 def test_tgf_style_legacy_nodes_and_edges() -> None:
-    src = r'''
-A leader
-B follower
-C follower
-#
-C A at 1979-05-27T07:33Z
-B A at 1979-05-30T12:05Z
-'''
+    src = dedent(r'''
+    A leader
+    B follower
+    C follower
+    #
+    C A at 1979-05-27T07:33Z
+    B A at 1979-05-30T12:05Z
+    ''')
 
     graph = loads(src)[0]
 
@@ -181,13 +183,13 @@ B A at 1979-05-30T12:05Z
 
 
 def test_numeric_node_keys_are_keys_not_numbers() -> None:
-    src = r'''
-# nodes
-42: label = "Numeric node key"
-7
-# edges
-42 -- 7
-'''
+    src = dedent(r'''
+    # nodes
+    42: label = "Numeric node key"
+    7
+    # edges
+    42 -- 7
+    ''')
     graph = loads(src)[0]
 
     assert len(graph.nodes) == 2
@@ -198,20 +200,20 @@ def test_numeric_node_keys_are_keys_not_numbers() -> None:
 
 
 def test_multiple_graphs() -> None:
-    src = r'''
-# graph
-name = "g1"
-# nodes
-A
+    src = dedent(r'''
+    # graph
+    name = "g1"
+    # nodes
+    A
 
-# graph
-name = "g2"
-# nodes
-B
-C
-# edges
-B -- C
-'''
+    # graph
+    name = "g2"
+    # nodes
+    B
+    C
+    # edges
+    B -- C
+    ''')
 
     graphs = loads(src)
     assert len(graphs) == 2
@@ -229,168 +231,228 @@ B -- C
 [
 ## VALUES
 (
-"repeated_value_in_key_set",
-r"""
-{A, B, C, D, A}
-"""
+    "repeated_value_in_key_set",
+    r"""
+    {A, B, C, D, A}
+    """
 ),
 (
-"float_missing_integer_part",
-r"""
-funny: .24
-"""
+    "float_missing_integer_part",
+    r"""
+    funny: .24
+    """
 ),
 (
-"float_missing_fraction_part",
-r"""
-funnier: 25.
-"""
+    "float_missing_fraction_part",
+    r"""
+    funnier: 25.
+    """
 ),
 (
-"invalid_integer_leading_zero",
-r"""
-schmitty_werbenjägermanjensen: 01
-"""
+    "invalid_integer_leading_zero",
+    r"""
+    schmitty_werbenjägermanjensen: 01
+    """
 ),
 (
-"invalid_string_escape",
-r"""
-itsa: "joke\s"
-"""
+    "invalid_string_escape",
+    r"""
+    itsa: "joke\s"
+    """
 ),
 ## SECTIONS
 (
-"invalid_section",
-r"""
-# kiwi
-A: 42
-"""
+    "invalid_section",
+    r"""
+    # kiwi
+    A: 42
+    """
 ),
 (
-"graph_doc_empty_nodes",
-r"""
-# graph
-phaser.setting = "STUN"
-# nodes
-"""
+    "graph_doc_empty_nodes",
+    r"""
+    # graph
+    phaser.setting = "STUN"
+    # nodes
+    """
 ),
 (
-"explicit_empty_nodes_section",
-r"""
-# nodes
-"""
+    "explicit_empty_nodes_section",
+    r"""
+    # nodes
+    """
 ),
 (
-"explicit_empty_nodes_section_with_comment",
-r"""
-# nodes
-// Han shot first
-"""
+    "explicit_empty_nodes_section_with_comment",
+    r"""
+    # nodes
+    // Han shot first
+    """
 ),
 (
-"edge_section_without_nodes",
-r"""
-# nodes
-{A, B, C}
-# graph
-key = "value"
-# edges
-A -> B
-"""
+    "edge_section_without_nodes",
+    r"""
+    # nodes
+    {A, B, C}
+    # graph
+    key = "value"
+    # edges
+    A -> B
+    """
 ),
 (
-"edge_section_with_undefined_nodes",
-r"""
-{A, B, C}
-# edges
-A -> B
-C <- B
-A -> D
-"""
+    "edge_section_with_undefined_nodes",
+    r"""
+    {A, B, C}
+    # edges
+    A -> B
+    C <- B
+    A -> D
+    """
 ),
 (
-"legacy_edge_section_without_nodes",
-r"""
-#
-a b
-"""
+    "legacy_edge_section_without_nodes",
+    r"""
+    #
+    a b
+    """
 ),
 ## GRAPH
 (
-"invalid_graph_property",
-r"""
-# graph
-12
-# nodes
-{A, B, C}
-"""
+    "invalid_graph_property",
+    r"""
+    # graph
+    12
+    # nodes
+    {A, B, C}
+    """
 ),
 
 ## MULTIPLE GRAPHS
 (
-"multiple_graphs_without_first_graph_header",
-r"""
-{A, B, C}
+    "multiple_graphs_without_first_graph_header",
+    r"""
+    {A, B, C}
 
-# graph
-# nodes
-{A, B, C, D}
-"""
+    # graph
+    # nodes
+    {A, B, C, D}
+    """
 ),
 (
-"multiple_graphs_without_graph_headers",
-r"""
-# nodes
-{A, B, C}
-# edges
-A -> B
+    "multiple_graphs_without_graph_headers",
+    r"""
+    # nodes
+    {A, B, C}
+    # edges
+    A -> B
 
-# nodes
-{A, B, C, D}
-# edges
-B -> C
-C -> D
-"""
+    # nodes
+    {A, B, C, D}
+    # edges
+    B -> C
+    C -> D
+    """
 ),
 
 ## NODES
 (
-"node_set_with_legacy_description",
-r"""
-{A, B} 12
-"""
+    "node_set_with_legacy_description",
+    r"""
+    {A, B} 12
+    """
 ),
 
 ## LEGACY NODES
 (
-"legacy_nodes_with_keyvalue_description",
-r"""
-A key = "value"
-"""
+    "legacy_nodes_with_keyvalue_description",
+    r"""
+    A key = "value"
+    """
 ),
 
 ## EDGES
 (
-"edge_with_legacy_description",
-r"""
-{A, B, C}
-#
-A -> B nope
-"""
+    "edge_with_legacy_description",
+    r"""
+    {A, B, C}
+    #
+    A -> B nope
+    """
 ),
 
 ## LEGACY EDGES
 (
-"legacy_edge_with_keyvalue_description",
-r"""
-A
-B
-#
-A B: key = "value"
-"""
+    "legacy_edge_with_keyvalue_description",
+    r"""
+    A
+    B
+    #
+    A B: key = "value"
+    """
 ),
 ])
 def test_reject_invalid_rgd(name, src):
     with pytest.raises(Exception):
-        loads(src)
+        loads(dedent(src))
+
+
+def test_undefined_edge_endpoint_is_invalid() -> None:
+    with pytest.raises(Exception):
+        loads(dedent(r'''
+        # nodes
+        A
+        # edges
+        A -- B
+        '''))
+
+
+@pytest.mark.parametrize(("name", "src"), [
+(
+    "duplicate_keyvalue_node_properties",
+    r'''
+    A: property = "first"
+    A: property = "second"
+    '''
+),
+(
+    "duplicate_value_only_node_properties",
+    r'''
+    A: "first"
+    A: "second"
+    '''
+),
+])
+def test_duplicate_node_property_is_invalid(name, src) -> None:
+    with pytest.raises(Exception):
+        loads(dedent(src))
+
+def test_combine_node_properties() -> None:
+    graph = loads(dedent(r'''
+    A: property = "first"
+    A: another  = "second"
+    '''))[0]
+    
+    assert graph.get_node("A").props['property'] == "first"
+    assert graph.get_node("A").props['another']  == "second"
+
+def test_duplicate_edge_property_is_invalid() -> None:
+    with pytest.raises(Exception):
+        loads(dedent(r'''
+        {A, B}
+        #
+        A -> B: property = "first"
+        A -> B: property = "second"
+        '''))
+
+def test_combine_edge_properties() -> None:
+    graph = loads(dedent(r'''
+    {A, B}
+    #
+    A -- B: property = "first"
+    A -- B: another  = "second"
+    '''))[0]
+    
+    assert graph.get_edge("A", "B").props['property'] == "first"
+    assert graph.get_edge("A", "B").props['another']  == "second"
 

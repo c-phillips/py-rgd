@@ -34,19 +34,25 @@ class Edge:
     direction: Direction = Direction.UNDIRECTED
     props: Attributes | None = None
 
+    def __hash__(self):
+        return hash((self.u, self.v, self.direction))
+
     def __repr__(self) -> str:
         return f"(Edge) {self.u} {self.direction} {self.v}: {self.props}"
 
 
 @dataclass
 class Hyperedge:
-    e: set[Any]
-    f: set[Any] | Any | None = None
+    u: set[Any]
+    v: set[Any] | Any | None = None
     direction: Edge.Direction = Edge.Direction.UNDIRECTED
     props: Attributes | None = None
 
+    def __hash__(self):
+        return hash((frozenset(self.u), frozenset(self.v) if self.v is not None else None, self.direction))
+
     def __repr__(self) -> str:
-        return f"(Hyperdge) {self.e} {self.direction} {self.f}: {self.props}"
+        return f"(Hyperdge) {self.u} {self.direction} {self.v}: {self.props}"
 
 
 class NodeTransformer(Transformer):
@@ -123,8 +129,31 @@ class EdgeTransformer(Transformer):
         return items[0]
 
     def edge_doc(self, items):
-        return [e for e in items if isinstance(e, (Edge, Hyperedge))]
+        all_decls = [e for e in items if isinstance(e, (Edge, Hyperedge))]
 
+        # Merge node redefinitions
+        decl_map = dict()
+        for decl in all_decls:
+            decl_map.setdefault(hash(decl), []).append(decl)
+
+        results = []
+        for hsh, decls in decl_map.items():
+            if len(decls) == 1:
+                results.append(decls[0])
+                continue
+
+            props = dict()
+            for decl in decls:
+                if not isinstance(decl.props, dict):
+                    raise ValueError("Edges cannot have multiple descriptions unless each uses a key-value list")
+                overlap = props.keys() & decl.props.keys()
+                if overlap:
+                    raise ValueError(f"Duplicate edge properties for {decl!r}: {sorted(overlap)!r}")
+                props.update(decl.props)
+
+            results.append(self.__build_edge(decl.u, decl.v, decl.direction, props))
+
+        return results
 
 
 class GraphTransformer(Transformer):
@@ -203,9 +232,9 @@ class Graph:
     def get_hyperedge(self, u: Any, v: Any | None = None, dir: Edge.Direction = Edge.Direction.DIRECTED) -> Hyperedge | None:
         for edge in self.edges:
             if isinstance(edge, Hyperedge):
-                if edge.e == u:
+                if edge.u == u:
                     if v is not None:
-                        if edge.f != v or edge.direction != dir:
+                        if edge.v != v or edge.direction != dir:
                             continue
                     return edge
 
@@ -218,16 +247,16 @@ class Graph:
                 edge_nodes.add(edge.u)
                 edge_nodes.add(edge.v)
             else:
-                if isinstance(edge.e, set):
-                    edge_nodes.update(edge.e)
+                if isinstance(edge.u, set):
+                    edge_nodes.update(edge.u)
                 else:
-                    edge_nodes.add(edge.e)
-                if edge.f is None:
+                    edge_nodes.add(edge.u)
+                if edge.v is None:
                     pass
-                elif isinstance(edge.f, set):
-                    edge_nodes.update(edge.f)
+                elif isinstance(edge.v, set):
+                    edge_nodes.update(edge.v)
                 else:
-                    edge_nodes.add(edge.f)
+                    edge_nodes.add(edge.v)
         diff = edge_nodes.difference(node_names)
         assert len(diff) == 0, f"Edges contain undefined nodes! {diff}"
 
