@@ -1,5 +1,4 @@
 import pytest
-import rich
 
 try:
     import networkx as nx

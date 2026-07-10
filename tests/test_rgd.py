@@ -71,6 +71,7 @@ def test_explicit_graph_properties_and_value_types() -> None:
     local_time = 07:32
     # nodes
     A
+    "🫣"
     ''')
 
     graph = loads(src)[0]
