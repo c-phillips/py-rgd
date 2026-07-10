@@ -101,6 +101,9 @@ class EdgeTransformer(Transformer):
             return Hyperedge(u, v, direction, details)
         return Edge(u, v, direction, details)
 
+    def hyper_edge_decl(self, items):
+        return Hyperedge(items[0], None, Edge.Direction.UNDIRECTED, props=items[1] if len(items) > 1 else None)
+
     def edge_decl(self, items):
         u, d, v = items[0], items[1], items[2]
         # Normalize edge direction
@@ -189,8 +192,19 @@ class Graph:
 
     def get_edge(self, u: Any, v: Any, dir: Edge.Direction = Edge.Direction.UNDIRECTED) -> Edge | None:
         for edge in self.edges:
+            if isinstance(edge, Hyperedge):
+                continue
             if edge.u == u and edge.v == v and edge.direction == dir:
                 return edge
+
+    def get_hyperedge(self, u: Any, v: Any | None = None, dir: Edge.Direction = Edge.Direction.DIRECTED) -> Hyperedge | None:
+        for edge in self.edges:
+            if isinstance(edge, Hyperedge):
+                if edge.e == u:
+                    if v is not None:
+                        if edge.f != v or edge.direction != dir:
+                            continue
+                    return edge
 
     def validate(self):
         # Validate graph

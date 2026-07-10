@@ -124,9 +124,35 @@ B <> D: active = true
     assert e2.props["label"] == "reverse normalized"
 
     e3 = graph.get_edge("A", "C")
+    assert e3 is not None
 
     e4 = graph.get_edge("B", "D", "<>")
     assert e4.props["active"] is True
+
+
+def test_hyperedges_and_directed_hyperedges() -> None:
+    src = r'''
+# nodes
+{A, B, C, D, E, F, G}
+# edges
+{A, B, C}: hyperproperty = 42.0
+{B, C} -> {E, F, G}: directed-hyperedge = true
+D -- A
+'''
+
+    graph = loads(src)[0]
+
+    assert graph.node_keys == {"A", "B", "C", "D", "E", "F", "G"}
+    assert len(graph.edges) == 3
+
+    h1 = graph.get_hyperedge({"A", "B", "C"})
+    assert h1.props["hyperproperty"] == pytest.approx(42.0)
+
+    h2 = graph.get_hyperedge({"B", "C"}, {"E", "F", "G"}, "->")
+    assert h2.props["directed-hyperedge"] is True
+
+    e1 = graph.get_edge("D", "A", "--")
+    assert e1 is not None
 
 
 @pytest.mark.parametrize(("name", "src"),
