@@ -127,7 +127,7 @@ class GraphTransformer(Transformer):
         items = items[0]
         if len(items) > 1:
             return (dict(), items[0], items[1])
-        return (dict(), items[0], [])
+        return [(dict(), items[0], [])]
 
     def graph_doc(self, items):
         items = [item for item in items if not (isinstance(item, Token) and item.type == "NLP") ]
@@ -157,15 +157,27 @@ class GraphTransformer(Transformer):
         return None
 
 
-@dataclass
+@dataclass(frozen=True)
 class Graph:
     nodes: list[Node]
     edges: list[Edge | Hyperedge]
-    properties: Attributes | None = None
+    props: Attributes | None = None
+    _node_keys: set[Any] = None
+
+    def __post_init__(self):
+        """Doing bad things for convenience."""
+        object.__setattr__(self, "_node_keys", {n.key for n in self.nodes})
 
     @property
     def node_keys(self) -> set[Any]:
-        return {n.key for n in self.nodes}
+        return self._node_keys
+
+    def get_node(self, key: Any) -> Node | None:
+        if key not in self.node_keys:
+            return None
+        for node in self.nodes:
+            if key == node.key:
+                return node 
 
     def validate(self):
         # Validate graph
@@ -191,9 +203,9 @@ class Graph:
 
     def __repr__(self) -> str:
         s = "Graph:\n"
-        if self.properties:
+        if self.props:
             s += "\tProperties:\n"
-            for k,v in self.properties.items():
+            for k,v in self.props.items():
                 s += f"\t\t{k}: {v}\n"
         s += "\tNodes:\n"
         for node in self.nodes:

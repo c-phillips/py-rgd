@@ -15,11 +15,37 @@ from py_rgd import loads
     ],
 )
 def test_empty_documents_parse(src: str) -> None:
-    result = loads(src)[0]
-    print(result)
+    """
+    Validate that an empty document, or document containing only
+    comments/blank lines returns an empty graph.
+    """
+    graph = loads(src)[0]
+    assert graph.nodes == []
+    assert graph.edges == []
+    assert graph.props == {}
 
-    # Some implementations return None for empty docs, some return one empty graph.
-    # assert graphs == [] or graphs == [({}, [], [])]
+
+
+def test_headerless_nodes_node_sets_and_descriptions() -> None:
+    src = r'''
+A
+B: label = "leader"
+{C, D, "node with spaces"}: group = "followers"
+E: [1, 2, "three"]
+'''
+
+    graph = loads(src)[0]
+
+    assert graph.props == {}
+    assert graph.edges == []
+    assert graph.node_keys == {"A", "B", "C", "D", "node with spaces", "E"}
+
+    assert graph.get_node("B").props["label"] == "leader"
+    assert graph.get_node("C").props["group"] == "followers"
+    assert graph.get_node("D").props["group"] == "followers"
+    assert graph.get_node("node with spaces").props["group"] == "followers"
+
+    assert graph.get_node("E").props == [1, 2, "three"]
 
 
 def test_explicit_graph_properties_and_value_types() -> None:
@@ -46,7 +72,7 @@ A
 '''
 
     graph = loads(src)[0]
-    props = graph.properties
+    props = graph.props
     assert props["name"] == "value coverage"
     assert props["dec"] == -17
     assert props["pos"] == 99
@@ -210,7 +236,7 @@ r"""
 (
 "legacy_nodes_with_keyvalue_description",
 r"""
-A: key = "value"
+A key = "value"
 """
 ),
 
