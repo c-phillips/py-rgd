@@ -70,7 +70,7 @@ def test_explicit_graph_properties_and_value_types() -> None:
     local_date = 1979-05-27
     local_time = 07:32
     # nodes
-    A
+    A 😉
     "🫣"
     ''')
 
@@ -95,7 +95,8 @@ def test_explicit_graph_properties_and_value_types() -> None:
     assert "local_date" in props
     assert "local_time" in props
 
-    assert graph.node_keys == {"A"}
+    assert graph.node_keys == {"A", "🫣"}
+    assert graph.get_node("A").props == ["😉"]
     assert graph.edges == []
 
 

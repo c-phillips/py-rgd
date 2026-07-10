@@ -60,7 +60,7 @@ legacy_description: legacy_value+
              | array
              | DATE_TIME    -> datetime
              | UNQUOTED_KEY -> legacy_bare
-             | LEGACY_BARE  -> legacy_bare
+             | LEGACY_TEXT  -> legacy_bare
 
 node_set: key_set
 
@@ -109,7 +109,7 @@ BIN_INT.3: /0b[01](?:_?[01])*/
 DEC_INT.2: /[+-]?(?:0|[1-9](?:_?[0-9])*)/
 
 UNQUOTED_KEY.1: /[A-Za-z0-9_][A-Za-z0-9_.-]*/
-LEGACY_BARE.0: /[A-Za-z0-9_.+-]+/
+LEGACY_TEXT.-10: /(?:(?!\/\/)[^ \t\r\n:=,\[\]{}"'])+/
 
 BASIC_STRING: /"(?:\\(?:["\\bfenrt]|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})|[^"\\\r\n])*"/
 LITERAL_STRING: /'[^'\r\n]*'/
