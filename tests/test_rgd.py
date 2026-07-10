@@ -436,14 +436,30 @@ def test_combine_node_properties() -> None:
     assert graph.get_node("A").props['property'] == "first"
     assert graph.get_node("A").props['another']  == "second"
 
-def test_duplicate_edge_property_is_invalid() -> None:
+
+@pytest.mark.parametrize(("name", "src"), [
+(
+    "duplicate_keyvalue_edge_properties",
+    r'''
+    {A, B}
+    #
+    A -> B: property = "first"
+    A -> B: property = "second"
+    '''
+),
+(
+    "duplicate_value_only_edge_properties",
+    r'''
+    {A, B}
+    #
+    A -> B: "first"
+    A -> B: "second"
+    '''
+),
+])
+def test_duplicate_edge_property_is_invalid(name, src) -> None:
     with pytest.raises(Exception):
-        loads(dedent(r'''
-        {A, B}
-        #
-        A -> B: property = "first"
-        A -> B: property = "second"
-        '''))
+        loads(dedent(src))
 
 def test_combine_edge_properties() -> None:
     graph = loads(dedent(r'''
