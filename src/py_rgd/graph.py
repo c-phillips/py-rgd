@@ -50,6 +50,9 @@ class Hyperedge:
 
 
 class NodeTransformer(Transformer):
+    def legacy_node_decl(self, items):
+        return [Node(items[0], items[1] if len(items) > 1 else None)]
+
     def node_decl(self, items):
         return [Node(items[0], items[1] if len(items) > 1 else None)]
 

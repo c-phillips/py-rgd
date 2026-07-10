@@ -155,6 +155,31 @@ D -- A
     assert e1 is not None
 
 
+def test_tgf_style_legacy_nodes_and_edges() -> None:
+    src = r'''
+A leader
+B follower
+C follower
+#
+C A at 1979-05-27T07:33Z
+B A at 1979-05-30T12:05Z
+'''
+
+    graph = loads(src)[0]
+
+    assert graph.props == {}
+    assert graph.node_keys == {"A", "B", "C"}
+    assert len(graph.edges) == 2
+
+    # Exact legacy description representation may be list[str], list[list[str]], etc.,
+    # depending on how your legacy_description transformer flattens values.
+    assert graph.get_node("A").props is not None
+    assert graph.edges[0].props is not None
+
+    assert graph.get_edge("C", "A") is not None
+    assert graph.get_edge("B", "A") is not None
+
+
 @pytest.mark.parametrize(("name", "src"),
 [
 ## VALUES
