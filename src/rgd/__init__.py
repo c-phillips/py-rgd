@@ -1,13 +1,21 @@
 from typing import Annotated
 from pathlib import Path
 import logging
+import rich
 from rich.logging import RichHandler
 
 
 import typer
 
 
-from .parser import loads
+from .parser import loads, load
+from .writer import dumps
+
+__all__ = [
+    "dumps",
+    "loads",
+    "load",
+]
 
 
 logging.basicConfig(format="%(message)s", datefmt="[%X]", handlers=[RichHandler()])
@@ -34,8 +42,9 @@ def parse_file(
 
     logger.info(f"Parsing {rgd_file}...")
 
-    assert False, "TODO: Implement file loading"
-    # load(f)
+    with open(rgd_file, 'r') as fp:
+        graphs = load(fp)
+    rich.print(graphs) 
 
     logger.info("Done!")
 

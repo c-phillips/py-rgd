@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from py_rgd import loads
+from rgd import loads
 
 
 

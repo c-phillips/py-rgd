@@ -7,10 +7,9 @@ try:
 except:
     raise ImportError("Could not import networkx")
 
+from rgd.networkx import networkx_loads
 
 def test_networkx_parse_digraph():
-    from py_rgd.networkx import networkx_loads
-
     rgd_str = """
     # graph
     sample = 12.0
@@ -53,8 +52,6 @@ def test_networkx_parse_digraph():
 
 
 def test_networkx_parse_undir_graph():
-    from py_rgd.networkx import networkx_loads
-
     rgd_str = """
     # graph
     sample = 12.0
@@ -97,8 +94,6 @@ def test_networkx_parse_undir_graph():
 
 
 def test_networkx_parse_mixedgraph():
-    from py_rgd.networkx import networkx_loads
-
     rgd_str = """
     # graph
     sample = 12.0
@@ -168,8 +163,6 @@ def test_networkx_parse_mixedgraph():
 ),
 ])
 def test_networkx_no_hyperedges(name, src):
-    from py_rgd.networkx import networkx_loads
-
     with pytest.raises(Exception):
         networkx_loads(dedent(src))
 

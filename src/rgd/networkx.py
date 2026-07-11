@@ -3,8 +3,8 @@ try:
 except:
     raise ImportError("Could not import networkx")
 
-from py_rgd.graph import Edge, Hyperedge
-from py_rgd.parser import loads
+from rgd.graph import Edge, Hyperedge
+from rgd.parser import loads
 
 def networkx_loads(
     input: str,

@@ -207,6 +207,46 @@ class Graph:
     props: Attributes | None = None
     _node_keys: set[Any] = None
 
+    def __eq__(self, other):
+        # TODO: Improve this wildly naive implementation
+        if not len(self.nodes) == len(other.nodes):
+            print("node len not the same")
+            return False
+        if not len(self.edges) == len(other.edges):
+            print("edge len not the same")
+            return False
+        if not self.props == other.props:
+            print("props not the same")
+            return False
+        
+        has_match = set()
+        for u in self.nodes:
+            for v in other.nodes:
+                if u.key == v.key\
+                and u.props == v.props:
+                    has_match.add(u.key)
+                    break
+        if not has_match == self.node_keys:
+            print("unmatched nodes")
+            return False
+
+        has_match = set()
+        for e in self.edges:
+            for f in other.edges:
+                if type(e) is type(f):
+                    if e.u == f.u  \
+                    and e.v == f.v \
+                    and e.direction == f.direction\
+                    and e.props == f.props:
+                        has_match.add(frozenset([e.u, e.direction, e.v]))
+                        break
+        if not len(has_match) == len(self.edges):
+            print("unmatched edges")
+            return False
+
+        return True
+                    
+
     def __post_init__(self):
         """Doing bad things for convenience."""
         object.__setattr__(self, "_node_keys", {n.key for n in self.nodes})

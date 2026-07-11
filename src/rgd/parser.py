@@ -1,7 +1,7 @@
 from lark import Lark
 
-from py_rgd.transformer import RGDValueTransformer
-from py_rgd.graph import (
+from rgd.transformer import RGDValueTransformer
+from rgd.graph import (
     NodeTransformer,
     EdgeTransformer,
     GraphTransformer,
@@ -137,8 +137,11 @@ def _lark_parse(input: str):
     return lark.parse(input)
 
 
+def load(file) -> list[Graph]:
+    return loads(file.read())
 
-def loads(input: str, validate: bool = True):
+
+def loads(input: str, validate: bool = True) -> list[Graph]:
     tree = _lark_parse(input)
     xform = (
         RGDValueTransformer()
