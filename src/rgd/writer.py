@@ -1,5 +1,6 @@
-from rgd.graph import Hyperedge
+from functools import partial
 from typing import Iterable
+
 from rgd.graph import Graph, Edge, Hyperedge, Node
 
 
@@ -43,13 +44,14 @@ def rgdEndpointEncoder(edge) -> str:
     else:
         raise ValueError(f"Unknown edge type: {type(edge)}")
 
-def rgdEncoder(graph: Graph) -> str:
+def rgdEncoder(graph: Graph, force_graph_header: bool = False) -> str:
     if not graph.nodes:
         return ""
     
     out = ""
-    if graph.props:
+    if graph.props or force_graph_header:
         out += "# graph\n"
+    if graph.props:
         for k,v in graph.props.items():
             out += f"{k} = {rgdValueEncoder(v)}\n"
         out += "\n"
@@ -78,6 +80,14 @@ def dumps(graphs: Graph | Iterable[Graph]) -> str:
     if isinstance(graphs, Graph):
         graphs = [graphs]
 
-    output = "\n".join(map(rgdEncoder, graphs))
+    output = "\n".join(
+        map(
+            partial(
+                rgdEncoder,
+                force_graph_header=len(graphs) > 1
+            ),
+            graphs
+        )
+    )
     return output
 

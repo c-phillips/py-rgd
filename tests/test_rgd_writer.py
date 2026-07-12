@@ -67,3 +67,48 @@ def test_write_descriptions():
     regraph = loads(out)[0]
     assert regraph == graph
 
+def test_write_multiple_graphs():
+    graphs = [
+        Graph(
+            nodes = [Node("A"), Node("B"), Node("C")],
+            edges = [Edge("A","B"), Edge("B","C", props={"weight": 1.0})],
+            props = {},
+        ),
+        Graph( 
+            nodes = [Node("X"), Node("Y"), Node("Z")],
+            edges = [Edge("X","Y"), Edge("Y","Z", props={"weight": 2.0})],
+            props = {"something": "value"},
+        )
+    ]
+    ans = dedent(
+    """\
+    # graph
+    # nodes
+    A
+    B
+    C
+
+    # edges
+    A -- B
+    B -- C: weight = 1.0
+
+    # graph
+    something = "value"
+    
+    # nodes
+    X
+    Y
+    Z
+
+    # edges
+    X -- Y
+    Y -- Z: weight = 2.0
+    """)
+
+    out = dumps(graphs)
+    assert out == ans
+    regraphs = loads(out)
+    assert len(regraphs) == len(graphs)
+    for idx, (i,o) in enumerate(zip(graphs, regraphs)):
+        assert i == o
+
