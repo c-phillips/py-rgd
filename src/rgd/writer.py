@@ -31,7 +31,6 @@ def rgdEncodeDescription(props) -> str:
         line += rgdKVEncoder(props)
     else:
         line += rgdValueEncoder(props)
-    line += "\n"
     return line
 
 def rgdEndpointEncoder(edge) -> str:
@@ -68,7 +67,7 @@ def rgdEncoder(graph: Graph) -> str:
             line = rgdEndpointEncoder(edge)
             if edge.props:
                 line += rgdEncodeDescription(edge.props)
-        out += line+"\n"
+            out += line+"\n"
 
     return out
 
