@@ -1,3 +1,4 @@
+from typing import Protocol, TypeVar
 from lark import Lark
 
 from rgd.transformer import RGDValueTransformer
@@ -5,7 +6,6 @@ from rgd.graph import (
     NodeTransformer,
     EdgeTransformer,
     GraphTransformer,
-    Node,
     Graph,
 )
 
@@ -137,12 +137,32 @@ def _lark_parse(input: str):
     return lark.parse(input)
 
 
-def load(file) -> list[Graph]:
-    return loads(file.read())
+
+T_co = TypeVar("T_co", covariant=True)
+class SupportsRead(Protocol[T_co]):
+    def read(self) -> T_co:
+        ...
+
+RGDStream = (
+    SupportsRead[str]
+    | SupportsRead[bytes]
+    | SupportsRead[bytearray]
+)
+RGDSource = str | bytes | bytearray
+
+def load(fp: RGDStream) -> list[Graph]:
+    return loads(fp.read())
 
 
-def loads(input: str, validate: bool = True) -> list[Graph]:
-    tree = _lark_parse(input)
+def loads(source: RGDSource, validate: bool = True) -> list[Graph]:
+    if isinstance(source, str):
+        src = source
+    elif isinstance(source, (bytes, bytearray)):
+        src = bytes(source).decode("utf-8", errors="strict")
+    else:
+        raise TypeError("rgd.loads() expects a str, bytes, or bytearray input, not {type(source).__name__}")
+
+    tree = _lark_parse(src)
     xform = (
         RGDValueTransformer()
         * EdgeTransformer()

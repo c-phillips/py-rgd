@@ -1,7 +1,7 @@
 from functools import partial
-from typing import Iterable
+from typing import Iterable, Protocol
 
-from rgd.graph import Graph, Edge, Hyperedge, Node
+from rgd.graph import Graph, Edge, Hyperedge
 
 
 def rgdValueEncoder(value, is_key: bool = False) -> str:
@@ -73,6 +73,14 @@ def rgdEncoder(graph: Graph, force_graph_header: bool = False) -> str:
 
     return out
 
+
+class TextWrite(Protocol):
+    def write(self, data: str, /) -> object:
+        ...
+
+def dump(graphs: Graph | Iterable[Graph], fp: TextWrite):
+    src = dumps(graphs)
+    fp.write(src)
 
 
 # TODO: [Feature] Add support to specify legacy output

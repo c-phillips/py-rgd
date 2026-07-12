@@ -12,6 +12,7 @@ from .parser import loads, load
 from .writer import dumps
 
 __all__ = [
+    "dump",
     "dumps",
     "loads",
     "load",
