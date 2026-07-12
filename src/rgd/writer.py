@@ -1,14 +1,39 @@
 from functools import partial
+import json
+import re
 from typing import Iterable, Protocol
 
 from rgd.graph import Graph, Edge, Hyperedge
 
 
-def rgdValueEncoder(value, is_key: bool = False) -> str:
+_UNQUOTED_KEY_RE = re.compile(
+    r"[A-Za-z0-9_][A-Za-z0-9_.-]*\Z"
+)
+
+# Thanks AI
+def rgdStringEncoder(value: str) -> str:
+    if not isinstance(value, str):
+        raise TypeError(
+            f"expected str, got {type(value).__name__}"
+        )
+
+    # RGD documents must contain Unicode scalar values, not lone surrogates.
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in value):
+        raise ValueError("RGD strings cannot contain surrogate code points")
+
+    # JSON basic-string escaping is a valid subset of RGD escaping.
+    encoded = json.dumps(value, ensure_ascii=False)
+
+    # Python's JSON encoder does not necessarily escape DEL, but RGD excludes
+    # it from unescaped basic-string characters.
+    return encoded.replace("\x7f", r"\u007f")
+
+
+def rgdValueEncoder(value) -> str:
     if isinstance(value, str):
-        if is_key:
-            return value
-        return f'"{value}"'
+        return rgdStringEncoder(value)
+    elif isinstance(value, bool):
+        return "true" if value else "false"
     elif isinstance(value, list):
         return rgdArrayEncoder(value)
     elif isinstance(value, dict):
@@ -17,13 +42,22 @@ def rgdValueEncoder(value, is_key: bool = False) -> str:
     # TODO: Validate this
     return str(value)
 
+
+def rgdKeyEncoder(key) -> str:
+    # TODO: Decide to enforce type(key) == str ahead of time or not
+    k = str(key)
+    if _UNQUOTED_KEY_RE.fullmatch(k):
+        return key
+    return rgdStringEncoder(k)
+
+
 def rgdArrayEncoder(values) -> str:
     return "[" + ", ".join(map(rgdValueEncoder, values)) + "]"
 
 def rgdKVEncoder(kvs) -> str:
     parts = []
     for k,v in kvs.items():
-        parts.append(f"{k} = {rgdValueEncoder(v)}")
+        parts.append(f"{rgdKeyEncoder(k)} = {rgdValueEncoder(v)}")
     return ", ".join(parts)
 
 def rgdEncodeDescription(props) -> str: 
@@ -36,11 +70,13 @@ def rgdEncodeDescription(props) -> str:
 
 def rgdEndpointEncoder(edge) -> str:
     if isinstance(edge, Edge):
-        return f"{edge.u} {str(edge.direction)} {edge.v}"
+        return f"{rgdKeyEncoder(edge.u)} {str(edge.direction)} {rgdKeyEncoder(edge.v)}"
     elif isinstance(edge, Hyperedge):
+        u = ', '.join(map(rgdKeyEncoder, list(edge.u)))
         if edge.v is not None:
-            return f"{edge.u} {str(edge.direction)} {edge.v}"
-        return f"{edge.u}"
+            v = ', '.join(map(rgdKeyEncoder, list(edge.v)))
+            return f"{{{u}}} {str(edge.direction)} {{{v}}}"
+        return f"{{{u}}}"
     else:
         raise ValueError(f"Unknown edge type: {type(edge)}")
 
@@ -53,11 +89,11 @@ def rgdEncoder(graph: Graph, force_graph_header: bool = False) -> str:
         out += "# graph\n"
     if graph.props:
         for k,v in graph.props.items():
-            out += f"{k} = {rgdValueEncoder(v)}\n"
+            out += f"{rgdKeyEncoder(k)} = {rgdValueEncoder(v)}\n"
         out += "\n"
     out += "# nodes\n"
     for node in graph.nodes:
-        line = f"{node.key}"
+        line = f"{rgdKeyEncoder(node.key)}"
         if node.props:
             line += rgdEncodeDescription(node.props)
 

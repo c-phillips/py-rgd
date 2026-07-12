@@ -1,3 +1,4 @@
+from pathlib import Path
 from textwrap import dedent
 
 import pytest
@@ -8,6 +9,10 @@ except:
     raise ImportError("Could not import networkx")
 
 from rgd.networkx import networkx_dumps
+
+
+TEST_DATA = Path(__file__).parent/"data"
+
 
 def test_networkx_write_digraph():
     digraph = nx.DiGraph()
@@ -71,4 +76,21 @@ def test_networkx_write_undir_graph():
 
     out = networkx_dumps(digraph)
     assert out == ans
+
+
+def test_football():
+    from rgd.networkx import networkx_loads
+    # Football GML file from http://www-personal.umich.edu/~mejn/netdata/football.zip
+    with open(TEST_DATA/"football.gml", 'r') as fp:
+        gml = fp.read()
+    gml = gml.split("\n")[1:]
+    k = nx.parse_gml(gml)  # parse gml data
+    
+    rgd = networkx_dumps(k)
+    g = networkx_loads(rgd)
+    assert len(g.nodes) == len(k.nodes)
+    for node in g.nodes:
+        assert node in k.nodes
+    for edge in g.edges:
+        assert edge in k.edges
 
