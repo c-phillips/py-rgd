@@ -9,7 +9,7 @@ import typer
 
 
 from .parser import loads, load
-from .writer import dumps
+from .writer import dumps, dump
 
 __all__ = [
     "dump",
