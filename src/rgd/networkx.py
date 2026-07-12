@@ -1,3 +1,4 @@
+from typing import Iterable
 import warnings
 
 try:
@@ -6,8 +7,8 @@ except:
     raise ImportError("Could not import networkx")
 
 from rgd.graph import Graph, Node, Edge, Hyperedge
-from rgd.parser import loads
-from rgd.writer import dumps
+from rgd.parser import loads, RGDStream, RGDSource
+from rgd.writer import dumps, TextWrite
 
 
 
@@ -30,7 +31,7 @@ def _convert_networkx_graph(graph: nx.Graph) -> Graph:
 
 
 def networkx_dumps(
-    graphs: nx.Graph | list[nx.Graph],
+    graphs: nx.Graph | Iterable[nx.Graph],
 ) -> str:
     if isinstance(graphs, (nx.Graph, nx.DiGraph)):
         graphs = [graphs]
@@ -38,8 +39,15 @@ def networkx_dumps(
     return dumps(rgd_graphs)
 
 
+def networkx_dump(
+    graphs: nx.Graph | Iterable[nx.Graph],
+    fp: TextWrite
+):
+    fp.write(networkx_dumps(graphs))
+
+
 def networkx_loads(
-    source: str,
+    source: RGDSource,
     validate: bool = True,
 ) -> nx.Graph | list[nx.Graph]:
     basic_graphs = loads(source, validate)
@@ -92,4 +100,10 @@ def networkx_loads(
     if len(nx_graphs) == 1:
         return nx_graphs[0]
     return nx_graphs
+
+
+def networkx_load(
+    fp: RGDStream,
+) -> nx.Graph | list[nx.Graph]:
+    return networkx_loads(fp.read())
 
