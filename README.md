@@ -16,7 +16,18 @@ To read an RGD file:
 import rgd
 
 with open("my_graph.rgd", 'r') as fp:
-    g = rgd.load(fp)
+    g: rgd.Graph = rgd.load(fp)
+
+# or load from a string
+rgd_string = """\
+{A, B, C}
+# edges
+A -- B
+B -- C
+C -- A
+"""
+
+g = rgd.loads(rgd_string)
 ```
 
 To write an RGD file:
@@ -29,7 +40,10 @@ def convert_to_rgd_graph(graph: MyGraphClass) -> rgd.Graph:
     return rgd.Graph(nodes, edges, props)
 
 with open("output_path.rgd", 'w') as fp:
-    rgd.dump(convert_to_rgd_graph(my_graph))
+    rgd.dump(convert_to_rgd_graph(my_graph), fp)
+
+# or write to a string
+rgd_string = rgd.dumps(convert_to_rgd_graph(my_graph))
 ```
 
 ### NetworkX
@@ -55,6 +69,8 @@ my_graph = nx.Graph()
 ...
 
 with open("output_path.rgd", 'w') as fp:
-    networkx_dump(my_graph)
+    networkx_dump(my_graph, fp)
 ```
+
+Similarly, `networkx_loads` and `networkx_dumps` exist for working directly with the input/output strings.
 
