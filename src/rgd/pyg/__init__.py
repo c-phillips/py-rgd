@@ -1,5 +1,5 @@
-from .parser import load, loads
-from .writer import dump, dumps
+from .dump import dump, dumps
+from .load import load, loads
 
 __all__ = [
     "dump",
@@ -7,4 +7,3 @@ __all__ = [
     "load",
     "loads",
 ]
-

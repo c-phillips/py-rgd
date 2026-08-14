@@ -17,9 +17,13 @@ dependencies = [
 networkx = [
     "networkx>=3.6.1"
 ]
+pyg = [
+    "torch>=2.11.0",
+    "torch-geometric",
+]
 
 [project.scripts]
-rgd = "rgd:main"
+rgd = "rgd.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
