@@ -1,56 +1,19 @@
-from typing import Iterable
 import warnings
 
 try:
     import networkx as nx
-except:
+except ImportError:
     raise ImportError("Could not import networkx")
 
-from rgd.graph import Graph, Node, Edge, Hyperedge
-from rgd.parser import loads, RGDStream, RGDSource
-from rgd.writer import dumps, TextWrite
+from rgd.graph import Edge, Hyperedge
+from rgd.parser import loads as rgd_loads, RGDStream, RGDSource
 
 
-
-def _convert_networkx_graph(graph: nx.Graph) -> Graph:
-    nodes = []
-    for n, props in graph.nodes(data=True):
-        if isinstance(props, dict):
-            if len(props) == 1 and 'attributes' in props:
-                props = props['attributes']
-        nodes.append(Node(n,props))
-
-    edges = []
-    direction = Edge.Direction.DIRECTED if isinstance(graph, nx.DiGraph) else Edge.Direction.UNDIRECTED
-    for u,v,props in graph.edges(data=True):
-        if isinstance(props, dict):
-            if len(props) == 1 and 'attributes' in props:
-                props = props['attributes']
-        edges.append(Edge(u, v, direction, props))
-    return Graph(nodes, edges, {})
-
-
-def networkx_dumps(
-    graphs: nx.Graph | Iterable[nx.Graph],
-) -> str:
-    if isinstance(graphs, (nx.Graph, nx.DiGraph)):
-        graphs = [graphs]
-    rgd_graphs = list(map(_convert_networkx_graph, graphs))
-    return dumps(rgd_graphs)
-
-
-def networkx_dump(
-    graphs: nx.Graph | Iterable[nx.Graph],
-    fp: TextWrite
-):
-    fp.write(networkx_dumps(graphs))
-
-
-def networkx_loads(
+def loads(
     source: RGDSource,
     validate: bool = True,
 ) -> nx.Graph | list[nx.Graph]:
-    basic_graphs = loads(source, validate)
+    basic_graphs = rgd_loads(source, validate)
 
     # Networkx has no hypergraph features.
     #   Raise error if any graphs include hyperedges.
@@ -79,13 +42,13 @@ def networkx_loads(
         ng = nx_type()
 
         for node in g.nodes:
-            props = node.props if node.props is not None else dict()
+            props = node.props if node.props is not None else {}
             if not isinstance(node.props, dict):
                 props = {"attributes": props}
             ng.add_node(node.key, **props)
         
         for edge in g.edges:
-            props = edge.props if edge.props is not None else dict()
+            props = edge.props if edge.props is not None else {}
             if not isinstance(edge.props, dict):
                 props = {"attributes": props}
             ng.add_edge(edge.u, edge.v, **props)
@@ -93,17 +56,15 @@ def networkx_loads(
             or edge.direction == Edge.Direction.UNDIRECTED:
                 ng.add_edge(edge.v, edge.u, **props)
 
-
         nx_graphs.append(ng)
-
 
     if len(nx_graphs) == 1:
         return nx_graphs[0]
     return nx_graphs
 
 
-def networkx_load(
+def load(
     fp: RGDStream,
 ) -> nx.Graph | list[nx.Graph]:
-    return networkx_loads(fp.read())
+    return loads(fp.read())
 

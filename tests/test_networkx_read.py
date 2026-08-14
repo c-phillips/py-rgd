@@ -4,10 +4,11 @@ import pytest
 
 try:
     import networkx as nx
-except:
+except ImportError:
     raise ImportError("Could not import networkx")
 
-from rgd.networkx import networkx_loads
+from rgd.networkx import loads as networkx_loads
+
 
 def test_networkx_parse_digraph():
     rgd_str = """

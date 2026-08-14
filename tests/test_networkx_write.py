@@ -1,14 +1,12 @@
 from pathlib import Path
 from textwrap import dedent
 
-import pytest
-
 try:
     import networkx as nx
-except:
+except ImportError:
     raise ImportError("Could not import networkx")
 
-from rgd.networkx import networkx_dumps
+from rgd.networkx import dumps as networkx_dumps
 
 
 TEST_DATA = Path(__file__).parent/"data"
@@ -79,7 +77,7 @@ def test_networkx_write_undir_graph():
 
 
 def test_football():
-    from rgd.networkx import networkx_loads
+    from rgd.networkx import loads as networkx_loads
     # Football GML file from http://www-personal.umich.edu/~mejn/netdata/football.zip
     with open(TEST_DATA/"football.gml", 'r') as fp:
         gml = fp.read()
