@@ -77,15 +77,16 @@ def test_networkx_write_undir_graph():
 
 
 def test_football():
-    from rgd.networkx import loads as networkx_loads
+    import rgd
+
     # Football GML file from http://www-personal.umich.edu/~mejn/netdata/football.zip
     with open(TEST_DATA/"football.gml", 'r') as fp:
         gml = fp.read()
     gml = gml.split("\n")[1:]
     k = nx.parse_gml(gml)  # parse gml data
     
-    rgd = networkx_dumps(k)
-    g = networkx_loads(rgd)
+    rgd_str = rgd.networkx.dumps(k)
+    g = rgd.networkx.loads(rgd_str)
     assert len(g.nodes) == len(k.nodes)
     for node in g.nodes:
         assert node in k.nodes

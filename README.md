@@ -53,24 +53,24 @@ Start by syncing the correct extras: `uv sync --extra networkx`.
 Read RGD to NetworkX:
 
 ```python
-from rgd.networkx import networkx_load
+import rgd
 
 with open("my_graph.rgd", 'r') as fp:
-    nx_graph = networkx_load(fp)
+    nx_graph = rgd.networkx.load(fp)
 ```
 
 Write NetworkX to RGD:
 
 ```python
-from rgd.networkx import networkx_dump
 import networkx as nx
+import rgd
 
 my_graph = nx.Graph()
 ...
 
 with open("output_path.rgd", 'w') as fp:
-    networkx_dump(my_graph, fp)
+    rgd.networkx.dump(my_graph, fp)
 ```
 
-Similarly, `networkx_loads` and `networkx_dumps` exist for working directly with the input/output strings.
+Similarly, `rgd.networkx.loads` and `rgd.networkx.dumps` exist for working directly with the input/output strings.
 
