@@ -3,6 +3,7 @@ import math
 import re
 from datetime import date, datetime, time
 from lark import Transformer, v_args
+from textwrap import dedent
 
 
 class RGDValueTransformer(Transformer):
@@ -14,9 +15,28 @@ class RGDValueTransformer(Transformer):
         text = text.replace(r"\e", r"\x1b")
         return ast.literal_eval(text)
 
+    def ml_basic_string(self, items):
+        text = str(items[0])
+
+        text = text.replace(r"\e", r"\x1b")
+        text = dedent(ast.literal_eval(text))
+        if text[0] == '\n':
+            text = text[1:]
+        elif text[:1] == '\r\n':
+            text = text[2:]
+        return text
+
     def literal_string(self, items):
         text = str(items[0])
         return text[1:-1]
+
+    def ml_literal_string(self, items):
+        text = dedent(str(items[0])[3:-3])
+        if text[0] == '\n':
+            text = text[1:]
+        elif text[:1] == '\r\n':
+            text = text[2:]
+        return text
 
     def UNQUOTED_KEY(self, items):
         return str(items)

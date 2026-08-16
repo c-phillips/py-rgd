@@ -567,3 +567,174 @@ def test_node_reference() -> None:
     assert g6_B is not None
     assert g6_B.props["prop"] == True
     assert graphs[6].get_node("C") is not None
+
+
+@pytest.mark.parametrize(("name", "src", "answer"),
+[
+(
+    "bms_single_line",
+    r'''
+    # nodes
+    A: """single line multiline string"""
+    ''',
+    "single line multiline string"
+),
+(
+    "bms_next_line",
+    r'''
+    # nodes
+    A: """
+    next line multiline string"""
+    ''',
+    "next line multiline string"
+),
+(
+    "bms_next_line_newline",
+    r'''
+    # nodes
+    A: """
+    next line multiline string newline
+    """
+    ''',
+    "next line multiline string newline\n"
+),
+(
+    "bms_next_line_newline_indent",
+    r'''
+    # nodes
+    A:  """
+        next line multiline string newline
+        """
+    ''',
+    "next line multiline string newline\n"
+),
+(
+    "bms_newline_next_line_newline_indent",
+    r'''
+    # nodes
+    A:  """
+
+        next line multiline string newline
+        """
+    ''',
+    "\nnext line multiline string newline\n"
+),
+(
+    "bms_newline_next_line_newline_indent_extra",
+    r'''
+    # nodes
+    A:  """
+
+            next line multiline string newline
+        """
+    ''',
+    "\nnext line multiline string newline\n"
+),
+(
+    "bms_newline_next_line_newline_indent_extra",
+    r'''
+    # nodes
+    A:  """
+    ┌─────────────────┐
+    │ Line One Text   │
+    │ Line Two Text   │
+    └─────────────────┘
+    """
+    ''',
+    "┌─────────────────┐\n│ Line One Text   │\n│ Line Two Text   │\n└─────────────────┘\n"
+),
+])
+def test_basic_multiline_string(name, src, answer):
+    g = loads(dedent(src))[0]
+    assert g.get_node("A").props == answer
+
+
+@pytest.mark.parametrize(("name", "src", "answer"),
+[
+(
+    "lms_single_line",
+    r"""
+    # nodes
+    A: '''single line multiline string'''
+    """,
+    "single line multiline string"
+),
+(
+    "lms_next_line",
+    r"""
+    # nodes
+    A: '''
+    next line multiline string'''
+    """,
+    "next line multiline string"
+),
+(
+    "lms_next_line_newline",
+    r"""
+    # nodes
+    A: '''
+    next line multiline string newline
+    '''
+    """,
+    "next line multiline string newline\n"
+),
+(
+    "lms_next_line_newline_indent",
+    r"""
+    # nodes
+    A:  '''
+        next line multiline string newline
+        '''
+    """,
+    "next line multiline string newline\n"
+),
+(
+    "lms_newline_next_line_newline_indent",
+    r"""
+    # nodes
+    A:  '''
+
+        next line multiline string newline
+        '''
+    """,
+    "\nnext line multiline string newline\n"
+),
+(
+    "lms_newline_next_line_newline_indent_extra",
+    r"""
+    # nodes
+    A:  '''
+
+            next line multiline string newline
+        '''
+    """,
+    "\nnext line multiline string newline\n"
+),
+(
+    "lms_newline_next_line_newline_indent_extra",
+    r"""
+    # nodes
+    A:  '''
+    ┌─────────────────┐
+    │ Line One Text   │
+    │ Line Two Text   │
+    └─────────────────┘
+    '''
+    """,
+    "┌─────────────────┐\n│ Line One Text   │\n│ Line Two Text   │\n└─────────────────┘\n"
+),
+(
+    "lms_with_newline_escaped",
+    r"""
+    # nodes
+    A:  '''
+
+            next line multiline string newline\n\n
+        '''
+    """,
+    "\nnext line multiline string newline\\n\\n\n"
+),
+])
+def test_literal_multiline_string(name, src, answer):
+    g = loads(dedent(src))[0]
+    assert g.get_node("A").props == answer
