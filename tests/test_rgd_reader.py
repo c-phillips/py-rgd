@@ -69,6 +69,7 @@ def test_explicit_graph_properties_and_value_types() -> None:
     when = 1979-05-27T07:32Z
     local_date = 1979-05-27
     local_time = 07:32
+    nothing = null
     # nodes
     A 😉
     "🫣"
@@ -89,6 +90,7 @@ def test_explicit_graph_properties_and_value_types() -> None:
     assert props["literal"] == "no escapes here"
     assert props["basic"] == "José"
     assert props["arr"] == [1, 2.0, True, "x", [3, 4]]
+    assert props["nothing"] is None
 
     # Accept either Python date/time objects or strings, depending on transformer policy.
     assert "when" in props
@@ -474,3 +476,94 @@ def test_combine_edge_properties() -> None:
     assert graph.get_edge("A", "B").props['property'] == "first"
     assert graph.get_edge("A", "B").props['another']  == "second"
 
+
+def test_node_reference() -> None:
+    graphs = loads(dedent(r'''
+    # graph
+    # nodes
+    {A, B}: prop = true
+
+    # graph
+    # nodes
+    &A
+
+    # graph
+    # nodes
+    &B
+
+    # graph
+    # nodes
+    &{A,B}
+
+    # graph
+    # nodes
+    &*
+
+    # graph
+    # nodes
+    &A: new = 1
+    C
+
+    # graph
+    # nodes
+    &*
+    '''))
+    
+    assert len(graphs) == 7
+
+    # Check the first graph
+    g0_A = graphs[0].get_node("A")
+    assert g0_A is not None
+    assert g0_A.props["prop"] == True
+    g0_B = graphs[0].get_node("B")
+    assert g0_B is not None
+    assert g0_B.props["prop"] == True
+
+    # Check referencing A from g0
+    assert len(graphs[1].nodes) == 1
+    g1_A = graphs[1].get_node("A")
+    assert g1_A is not None
+    assert g1_A.props["prop"] == True
+
+    # Check referencing B from g0
+    assert len(graphs[2].nodes) == 1
+    g2_B = graphs[2].get_node("B")
+    assert g2_B is not None
+    assert g2_B.props["prop"] == True
+
+    # Check referencing A and B from g0
+    assert len(graphs[3].nodes) == 2
+    g3_A = graphs[3].get_node("A")
+    assert g3_A is not None
+    assert g3_A.props["prop"] == True
+    g3_B = graphs[3].get_node("B")
+    assert g3_B is not None
+    assert g3_B.props["prop"] == True
+
+    # Check referencing all from g0
+    assert len(graphs[4].nodes) == 2
+    g4_A = graphs[4].get_node("A")
+    assert g4_A is not None
+    assert g4_A.props["prop"] == True
+    g4_B = graphs[4].get_node("B")
+    assert g4_B is not None
+    assert g4_B.props["prop"] == True
+
+    # Check referencing A from g0
+    assert len(graphs[5].nodes) == 2
+    g5_A = graphs[5].get_node("A")
+    assert g5_A is not None
+    assert g5_A.props["prop"] == True
+    assert g5_A.props["new"] == 1
+    assert graphs[5].get_node("C") is not None
+
+    # Check referencing all from all previous
+    assert len(graphs[6].nodes) == 3
+    g6_A = graphs[6].get_node("A")
+    assert g6_A is not None
+    assert g6_A.props["prop"] == True
+    assert g5_A.props["new"] == 1
+    g6_B = graphs[6].get_node("B")
+    assert g6_B is not None
+    assert g6_B.props["prop"] == True
+    assert graphs[6].get_node("C") is not None

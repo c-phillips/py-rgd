@@ -81,6 +81,9 @@ class RGDValueTransformer(Transformer):
     def un(self, items):
         return "--"
 
+    def null(self, items):
+        return None
+
 
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _TIME_ONLY = re.compile(r"^\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$")

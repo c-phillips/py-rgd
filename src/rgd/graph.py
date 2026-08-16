@@ -1,7 +1,8 @@
-from typing import Any
+from copy import deepcopy
 from dataclasses import dataclass
-from enum import Enum, StrEnum
+from enum import StrEnum
 from itertools import chain
+from typing import Any
 
 from lark import Token, Transformer
 
@@ -15,6 +16,13 @@ class Node:
 
     def __repr__(self) -> str:
         return f"(Node) {self.key}: {self.props}"
+
+@dataclass
+class NodeReference(Node):
+    """Should not appear in the final graph."""
+    all: bool = False
+    def __repr__(self) -> str:
+        return f"&(Node) {self.key}: {self.props}"
 
 
 @dataclass
@@ -72,7 +80,13 @@ class NodeTransformer(Transformer):
         return items[0]
 
     def node_doc(self, items):
-        nodes = list(chain.from_iterable(items))
+        refs  = []
+        nodes = []
+        for n in list(chain.from_iterable(items)):
+            if isinstance(n, NodeReference):
+                refs.append(n)
+                continue
+            nodes.append(n)
 
         # Merge node redefinitions
         node_map = dict()
@@ -96,10 +110,21 @@ class NodeTransformer(Transformer):
 
             results.append(Node(key, props))
 
-        return results
+        return results + refs
 
     def node_doc_body(self, items):
         return items[0], items[1] if len(items) > 1 else []
+
+    def node_reference_decl(self, items):
+        items = items[1:]  # pop the REF token
+        return [NodeReference(items[0], items[1] if len(items) > 1 else None)]
+
+    def node_set_reference_decl(self, items):
+        items = items[1:]  # pop the REF token
+        return [NodeReference(n, items[1] if len(items) > 1 else None) for n in items[0]]
+
+    def all_nodes_reference_decl(self, items):
+        return [NodeReference(None, None, True)]
 
 
 class EdgeTransformer(Transformer):
@@ -249,7 +274,21 @@ class Graph:
 
     def __post_init__(self):
         """Doing bad things for convenience."""
+        object.__setattr__(self, "__node_refs", [i for i,n in enumerate(self.nodes) if isinstance(n, NodeReference)])
         object.__setattr__(self, "_node_keys", {n.key for n in self.nodes})
+
+    def deref(self, graphs: list["Graph"]):
+        for ref_idx in self.__node_refs:
+            nr = self.nodes[ref_idx]
+            for graph in graphs:
+                query_node = graph.get_node(nr.key)
+                if query_node is not None:
+                    clone = deepcopy(query_node)
+                    if len(clone.props.keys() & nr.props.keys()) > 0:
+                        raise ValueError("Node references cannot override properties!")
+                    clone.props.update(nr.props)
+                    self.nodes[ref_idx] = clone
+                    break
 
     @property
     def node_keys(self) -> set[Any]:
