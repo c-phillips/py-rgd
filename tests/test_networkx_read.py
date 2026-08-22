@@ -264,3 +264,21 @@ def test_karate_club():
     for edge in g.edges:
         assert (int(edge[0])-1, int(edge[1])-1) in k.edges
 
+
+def test_networkx_read_multigraph():
+    src = dedent("""\
+    {A, B, C}
+    # edges
+    A -> B &1
+    A -> B &2: tag = "test"
+    C -> A &*: value = 1
+    C -> A &*: tag = "another"
+    """)
+    g = networkx_loads(src)
+    assert len(g.edges) == 4
+
+    assert g.edges[('A', 'B', 0)]
+    assert g.edges[('A', 'B', 1)]['tag'] == "test"
+    assert g.edges[('C', 'A', 0)]['value'] == 1
+    assert g.edges[('C', 'A', 1)]['tag'] == "another"
+

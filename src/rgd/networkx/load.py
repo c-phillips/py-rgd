@@ -36,8 +36,14 @@ def loads(
             """)
 
         nx_type = nx.Graph
-        for edge in g.edges:
-            if edge.direction != Edge.Direction.UNDIRECTED:
+        has_dir = any(edge.direction != Edge.Direction.UNDIRECTED for edge in g.edges)
+        if any(edge.edge_id is not None for edge in g.edges):
+            if has_dir:
+                nx_type = nx.MultiDiGraph
+            else:
+                nx_type = nx.MultiGraph
+        else:
+            if has_dir:
                 nx_type = nx.DiGraph
         ng = nx_type()
 
