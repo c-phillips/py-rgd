@@ -137,6 +137,22 @@ class NodeTransformer(Transformer):
 
 class EdgeTransformer(Transformer):
 
+    # TODO: Evaluate if this is the best way to be handling this sort of thing?
+    #       -> Fixes the type checking issue when testing for edge properties
+    #          with multi-edges, but feels a little messy
+    @dataclass
+    class EdgeIdentity:
+        eid: Any
+
+    @dataclass
+    class AnonymousEID(EdgeIdentity):
+        ...
+
+    @dataclass
+    class NamedEID(EdgeIdentity):
+        ...
+
+
     @staticmethod
     def __build_edge(u, v, direction = Edge.Direction.UNDIRECTED, details = None, eid = None):
         if isinstance(u, set) or isinstance(v, set):
@@ -162,7 +178,10 @@ class EdgeTransformer(Transformer):
             if isinstance(items[3], dict):
                 props = items[3]
             else:
-                eid = items[3]
+                if isinstance(items[3], EdgeTransformer.EdgeIdentity):
+                    eid = items[3].eid
+                else:
+                    props = items[3]
         return self.__build_edge(u, v, d, props, eid)
 
     def legacy_edge_decl(self, items):
@@ -172,10 +191,12 @@ class EdgeTransformer(Transformer):
         return items[0]
 
     def named_edge_identity(self, items):
-        return str(items[1])
+        # return str(items[1])
+        return self.NamedEID(str(items[1]))
 
     def anonymous_edge_identity(self, items):
-        return True
+        # return True
+        return self.AnonymousEID(True)
 
     def edge_doc(self, items):
         all_decls = [e for e in items if isinstance(e, (Edge, Hyperedge))]
