@@ -738,3 +738,18 @@ def test_basic_multiline_string(name, src, answer):
 def test_literal_multiline_string(name, src, answer):
     g = loads(dedent(src))[0]
     assert g.get_node("A").props == answer
+
+
+def test_edge_identity():
+    graph = loads(dedent(r"""
+    # nodes
+    {A,B}
+    # edges
+    A -> B &1
+    A -> B &2: tag = "exists"
+    A -> B &*
+    A -> B &*: tag = "another one"
+    """))[0]
+    assert len(graph.nodes) == 2
+    assert len(graph.edges) == 4
+

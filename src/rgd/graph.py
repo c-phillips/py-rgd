@@ -41,12 +41,16 @@ class Edge:
     v: Any
     direction: Direction = Direction.UNDIRECTED
     props: Attributes | None = None
+    edge_id: Any | None = None
 
     def __hash__(self):
         return hash((self.u, self.v, self.direction))
 
     def __repr__(self) -> str:
-        return f"(Edge) {self.u} {self.direction} {self.v}: {self.props}"
+        eid_str = ''
+        if self.edge_id is not None:
+            eid_str = f" &{self.edge_id}"
+        return f"(Edge) {self.u} {self.direction} {self.v}: {self.props}" + eid_str
 
 
 @dataclass
@@ -55,12 +59,16 @@ class Hyperedge:
     v: set[Any] | Any | None = None
     direction: Edge.Direction = Edge.Direction.UNDIRECTED
     props: Attributes | None = None
+    edge_id: Any | None = None
 
     def __hash__(self):
         return hash((frozenset(self.u), frozenset(self.v) if self.v is not None else None, self.direction))
 
     def __repr__(self) -> str:
-        return f"(Hyperdge) {self.u} {self.direction} {self.v}: {self.props}"
+        eid_str = ''
+        if self.edge_id is not None:
+            eid_str = f" &{self.edge_id}"
+        return f"(Hyperdge) {self.u} {self.direction} {self.v}: {self.props}" + eid_str
 
 
 class NodeTransformer(Transformer):
@@ -130,10 +138,10 @@ class NodeTransformer(Transformer):
 class EdgeTransformer(Transformer):
 
     @staticmethod
-    def __build_edge(u, v, direction = Edge.Direction.UNDIRECTED, details = None):
+    def __build_edge(u, v, direction = Edge.Direction.UNDIRECTED, details = None, eid = None):
         if isinstance(u, set) or isinstance(v, set):
-            return Hyperedge(u, v, direction, details)
-        return Edge(u, v, direction, details)
+            return Hyperedge(u, v, direction, details, eid)
+        return Edge(u, v, direction, details, eid)
 
     def hyper_edge_decl(self, items):
         return Hyperedge(items[0], None, Edge.Direction.UNDIRECTED, props=items[1] if len(items) > 1 else None)
@@ -144,14 +152,30 @@ class EdgeTransformer(Transformer):
         if d == Edge.DirectionOrder.RL:
             u,v = v,u
             d = Edge.DirectionOrder.LR
-        props = items[3] if len(items) > 3 else None
-        return self.__build_edge(u, v, d, props)
+        
+        eid   = None
+        props = None
+        if len(items) == 5:
+            eid   = items[3]
+            props = items[4]
+        elif len(items) == 4:
+            if isinstance(items[3], dict):
+                props = items[3]
+            else:
+                eid = items[3]
+        return self.__build_edge(u, v, d, props, eid)
 
     def legacy_edge_decl(self, items):
         return self.__build_edge(items[0], items[1], details=items[2:])
 
     def edge_line(self, items):
         return items[0]
+
+    def named_edge_identity(self, items):
+        return str(items[1])
+
+    def anonymous_edge_identity(self, items):
+        return True
 
     def edge_doc(self, items):
         all_decls = [e for e in items if isinstance(e, (Edge, Hyperedge))]
@@ -167,16 +191,25 @@ class EdgeTransformer(Transformer):
                 results.append(decls[0])
                 continue
 
-            props = dict()
-            for decl in decls:
-                if not isinstance(decl.props, dict):
-                    raise ValueError("Edges cannot have multiple descriptions unless each uses a key-value list")
-                overlap = props.keys() & decl.props.keys()
-                if overlap:
-                    raise ValueError(f"Duplicate edge properties for {decl!r}: {sorted(overlap)!r}")
-                props.update(decl.props)
+            have_ids = [decl.edge_id is not None for decl in decls]
+            if any(have_ids):
+                if not all(have_ids):
+                    raise ValueError(f"If any (u,v) edge is labeled, all (u,v) edges must be labeled: {decls}")
+                results.extend([
+                    self.__build_edge(decl.u, decl.v, decl.direction, decl.props, decl.edge_id)
+                    for decl in decls
+                ])
+            else:
+                props = dict()
+                for decl in decls:
+                    if not isinstance(decl.props, dict):
+                        raise ValueError("Edges cannot have multiple descriptions unless each uses a key-value list")
+                    overlap = props.keys() & decl.props.keys()
+                    if overlap:
+                        raise ValueError(f"Duplicate edge properties for {decl!r}: {sorted(overlap)!r}")
+                    props.update(decl.props)
 
-            results.append(self.__build_edge(decl.u, decl.v, decl.direction, props))
+                results.append(self.__build_edge(decl.u, decl.v, decl.direction, props))
 
         return results
 
@@ -274,10 +307,10 @@ class Graph:
 
     def __post_init__(self):
         """Doing bad things for convenience."""
-        object.__setattr__(self, "__node_refs", [i for i,n in enumerate(self.nodes) if isinstance(n, NodeReference)])
         object.__setattr__(self, "_node_keys", {n.key for n in self.nodes})
 
-    def deref(self, graphs: list["Graph"]):
+    @staticmethod
+    def deref(graphs: list["Graph"]):
         for ref_idx in self.__node_refs:
             nr = self.nodes[ref_idx]
             for graph in graphs:
