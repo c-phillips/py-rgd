@@ -1,4 +1,4 @@
-from .parser import load, loads
+from .parser import load, loads, rgd_parser
 from .writer import dump, dumps
 
 __all__ = [

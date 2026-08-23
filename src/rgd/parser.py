@@ -1,6 +1,6 @@
 from copy import deepcopy
 from typing import Protocol, TypeVar, Any
-from lark import Lark
+from lark import Lark, Transformer
 
 from rgd.transformer import RGDValueTransformer
 from rgd.graph import (
@@ -278,17 +278,28 @@ COMMENT: /[ \t]*\/\/[^\r\n]*/
 %ignore /[ \t]+/
 """
 
+class RGDTansformer(
+    RGDValueTransformer,
+    EdgeTransformer,
+    NodeTransformer,
+    GraphTransformer,
+    Transformer,
+):
+    ...
+
+rgd_parser = Lark(
+    rgd_grammar,
+    parser='lalr',
+    lexer='contextual',
+    maybe_placeholders=False,
+    transformer=RGDTansformer(),
+)
+
 
 def _lark_parse(input: str):
-    lark = Lark(
-        rgd_grammar,
-        parser='lalr',
-        lexer='contextual',
-        maybe_placeholders=False,
-    )
     if input and not input.endswith(("\n", "\r")):
         input += "\n"
-    return lark.parse(input)
+    return rgd_parser.parse(input)
 
 
 RefRGDTree = tuple[dict[str, Any], list[Node | NodeReference], list[Edge | Hyperedge]]
@@ -320,13 +331,6 @@ def loads(source: RGDSource, validate: bool = True) -> list[Graph]:
         raise TypeError("rgd.loads() expects a str, bytes, or bytearray input, not {type(source).__name__}")
 
     tree = _lark_parse(src)
-    xform = (
-        RGDValueTransformer()
-        * EdgeTransformer()
-        * NodeTransformer()
-        * GraphTransformer()
-    )
-    tree = xform.transform(tree)
     if tree is None:
         return [Graph([], [], {})]
 
